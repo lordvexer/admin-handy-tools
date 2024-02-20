@@ -3,6 +3,8 @@ import platform
 import shutil
 import hashlib
 import uuid
+import filecmp
+import datetime
 from colorama import Fore, Style
 
 def folder_tools():
@@ -225,10 +227,6 @@ def compress_folder(folder_path):
     shutil.make_archive(folder_path, 'zip', folder_path)
     print(f"{Fore.GREEN}Folder compressed successfully.")
 
-import os
-import hashlib
-
-
 def find_duplicates(folder_path):
     # Dictionary to store file hashes
     hash_map = {}
@@ -281,16 +279,129 @@ def hash_file(file_path):
     return file_hash
 
 def manage_permissions_and_ownership(folder_path):
-    # Functionality for managing permissions and ownership can be added here
-    pass
+    print("Manage Permissions and Ownership:")
+    print("1. Change permissions of files and folders")
+    print("2. Change ownership of files and folders")
+    choice = input("Enter your choice: ")
+
+    if choice == '1':
+        change_permissions(folder_path)
+    elif choice == '2':
+        change_ownership(folder_path)
+    else:
+        print("Invalid choice!")
+
+def change_permissions(folder_path):
+    permissions = input("Enter new permissions (in octal format, e.g., 755): ")
+    try:
+        os.chmod(folder_path, int(permissions, 8))
+        print("Permissions changed successfully.")
+    except FileNotFoundError:
+        print("Folder not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def change_ownership(folder_path):
+    if platform.system() == "Windows":
+        print("Changing ownership is not supported on Windows.")
+        return
+
+    user = input("Enter the new user (UID) for ownership: ")
+    group = input("Enter the new group (GID) for ownership: ")
+    try:
+        os.chown(folder_path, int(user), int(group))
+        print("Ownership changed successfully.")
+    except FileNotFoundError:
+        print("Folder not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
 
 def view_file_details(file_path):
-    # Functionality for viewing file details can be added here
-    pass
+    try:
+        file_stat = os.stat(file_path)
+        print("File Details:")
+        print(f"Path: {file_path}")
+        print(f"Size: {file_stat.st_size} bytes")
+        print(f"Permissions: {oct(file_stat.st_mode & 0o777)}")
+        print(f"Owner: {file_stat.st_uid if platform.system() != 'Windows' else 'N/A'}")
+        print(f"Group: {file_stat.st_gid if platform.system() != 'Windows' else 'N/A'}")
+        print(f"Last Modified: {datetime.datetime.fromtimestamp(file_stat.st_mtime)}")
+        print(f"Last Accessed: {datetime.datetime.fromtimestamp(file_stat.st_atime)}")
+        print(f"Created: {datetime.datetime.fromtimestamp(file_stat.st_ctime)}")
+    except FileNotFoundError:
+        print("File not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
-def compare_folders(folder1_path, folder2_path):
-    # Functionality for comparing folders can be added here
-    pass
+
+def compare_folders():
+    folder1_path = input("Enter the path of the first folder: ")
+    folder2_path = input("Enter the path of the second folder: ")
+
+    print("Comparing folders:")
+    print(f"Folder 1: {folder1_path}")
+    print(f"Folder 2: {folder2_path}")
+
+    # Check if the paths are valid directories
+    if not os.path.isdir(folder1_path):
+        print(f"Error: {folder1_path} is not a valid directory.")
+        return
+    if not os.path.isdir(folder2_path):
+        print(f"Error: {folder2_path} is not a valid directory.")
+        return
+
+    # Get the immediate contents of each folder
+    folder1_contents = set(os.listdir(folder1_path))
+    folder2_contents = set(os.listdir(folder2_path))
+
+    # Calculate the differences
+    files_only_in_folder1 = folder1_contents - folder2_contents
+    files_only_in_folder2 = folder2_contents - folder1_contents
+
+    # Print out the differences
+    if files_only_in_folder1:
+        print(f"Files only in {folder1_path}:")
+        for file in files_only_in_folder1:
+            print(f"  {file}")
+    else:
+        print(f"No files only in {folder1_path}.")
+
+    if files_only_in_folder2:
+        print(f"Files only in {folder2_path}:")
+        for file in files_only_in_folder2:
+            print(f"  {file}")
+    else:
+        print(f"No files only in {folder2_path}.")
+
+    common_files = folder1_contents.intersection(folder2_contents)
+    if common_files:
+        print(f"Common files:")
+        for file in common_files:
+            print(f"  {file}")
+    else:
+        print(f"No common files.")
+
+    # Compare immediate subdirectories
+    subdirectories_only_in_folder1 = [d for d in folder1_contents if os.path.isdir(os.path.join(folder1_path, d)) and d not in folder2_contents]
+    if subdirectories_only_in_folder1:
+        print(f"Subdirectories only in {folder1_path}:")
+        for subdir in subdirectories_only_in_folder1:
+            print(f"  {subdir}")
+    else:
+        print(f"No subdirectories only in {folder1_path}.")
+
+    subdirectories_only_in_folder2 = [d for d in folder2_contents if os.path.isdir(os.path.join(folder2_path, d)) and d not in folder1_contents]
+    if subdirectories_only_in_folder2:
+        print(f"Subdirectories only in {folder2_path}:")
+        for subdir in subdirectories_only_in_folder2:
+            print(f"  {subdir}")
+    else:
+        print(f"No subdirectories only in {folder2_path}.")
+
+
+
 
 def empty_trash(trash_path):
     # Functionality for emptying the trash folder can be added here
@@ -305,7 +416,7 @@ def main():
         print(Style.RESET_ALL + "\nMain Menu:")
         print("1. Folder Tools")
         print("2. File Tools")
-        print("3. Exit")
+        print("0. Exit")
         choice = input("Enter your choice: ")
 
         if choice == '1':
@@ -313,7 +424,7 @@ def main():
         elif choice == '2':
             # Add functionality for File Tools menu
             pass
-        elif choice == '3':
+        elif choice == '0':
             print("Exiting the program. Goodbye!")
             break
         else:
