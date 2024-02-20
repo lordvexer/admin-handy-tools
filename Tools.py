@@ -3,7 +3,6 @@ import platform
 import shutil
 import hashlib
 import uuid
-import filecmp
 import datetime
 from colorama import Fore, Style
 
@@ -21,8 +20,7 @@ def folder_tools():
     print("10. Permissions and ownership")
     print("11. View file details")
     print("12. Compare folders")
-    print("13. Empty trash")
-    print("14. Create symbolic links")
+    print("13. Create symbolic links")
     choice = input("Enter your choice: ")
 
     if choice == '1':
@@ -66,13 +64,8 @@ def folder_tools():
         file_path = input("Enter the path of the file to view details: ")
         view_file_details(file_path)
     elif choice == '12':
-        folder1_path = input("Enter the path of the first folder: ")
-        folder2_path = input("Enter the path of the second folder: ")
-        compare_folders(folder1_path, folder2_path)
+        compare_folders()
     elif choice == '13':
-        trash_path = input("Enter the path of the trash folder: ")
-        empty_trash(trash_path)
-    elif choice == '14':
         source_path = input("Enter the path of the source file or folder: ")
         link_path = input("Enter the path of the symbolic link: ")
         create_symbolic_link(source_path, link_path)
@@ -316,8 +309,6 @@ def change_ownership(folder_path):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-
-
 def view_file_details(file_path):
     try:
         file_stat = os.stat(file_path)
@@ -334,7 +325,6 @@ def view_file_details(file_path):
         print("File not found!")
     except Exception as e:
         print(f"An error occurred: {e}")
-
 
 def compare_folders():
     folder1_path = input("Enter the path of the first folder: ")
@@ -401,16 +391,17 @@ def compare_folders():
         print(f"No subdirectories only in {folder2_path}.")
 
 
-
-
-def empty_trash(trash_path):
-    # Functionality for emptying the trash folder can be added here
-    pass
-
 def create_symbolic_link(source_path, link_path):
-    # Functionality for creating symbolic links can be added here
-    pass
-
+    try:
+        os.symlink(source_path, link_path)
+        print(f"{Fore.GREEN}Symbolic link created successfully.")
+    except FileExistsError:
+        print(f"{Fore.YELLOW}Symbolic link already exists!")
+    except FileNotFoundError:
+        print(f"{Fore.YELLOW}Source path not found!")
+    except Exception as e:
+        print(f"{Fore.RED}An error occurred while creating symbolic link: {e}")
+        
 def main():
     while True:
         print(Style.RESET_ALL + "\nMain Menu:")
