@@ -3,12 +3,13 @@ import platform
 import shutil
 import hashlib
 import uuid
+import filecmp
 import datetime
 from colorama import Fore, Style
 
 def folder_tools():
-    print(Fore.YELLOW + "Folder Tools Menu:")
-    print("1. List contents of a folder")
+    print(Fore.RED + "\nFolder Tools Menu:")
+    print(Fore.YELLOW + "1. List contents of a folder")
     print("2. Create a new folder")
     print("3. Delete folder(s)")
     print("4. Show information of a folder")
@@ -21,7 +22,7 @@ def folder_tools():
     print("11. View file details")
     print("12. Compare folders")
     print("13. Create symbolic links")
-    choice = input("Enter your choice: ")
+    choice = input(Fore.CYAN +"Enter your choice: ")
 
     if choice == '1':
         folder_path = input("Enter the path of the folder: ")
@@ -72,6 +73,54 @@ def folder_tools():
     else:
         print("Invalid choice!")
 
+
+def file_tools():
+    print(Fore.RED + "\nFile Tools Menu:")
+    print(Fore.YELLOW + "1. File Information")
+    print("2. File Operations")
+    print("3. File Comparison")
+    print("4. File Search")
+    print("5. File Compression")
+    print("6. File Encryption/Decryption")
+    print("7. File Editing")
+    print("8. File Permissions")
+    print("9. File Hashing")
+    print("10. File Conversion")
+    choice = input(Fore.CYAN +"Enter your choice: ")
+    if choice == '1':
+        file_path = input("Enter the path of the file: ")
+        view_file_details(file_path)
+    elif choice == '2':
+        # Implement file operations
+        pass
+    elif choice == '3':
+        # Implement file comparison
+        pass
+    elif choice == '4':
+        # Implement file search
+        pass
+    elif choice == '5':
+        # Implement file compression
+        pass
+    elif choice == '6':
+        # Implement file encryption/decryption
+        pass
+    elif choice == '7':
+        # Implement file editing
+        pass
+    elif choice == '8':
+        # Implement file permissions
+        pass
+    elif choice == '9':
+        # Implement file hashing
+        pass
+    elif choice == '10':
+        # Implement file conversion
+        pass
+    else:
+        print("Invalid choice!")
+
+
 def list_folder_contents(folder_path):
     try:
         contents = os.listdir(folder_path)
@@ -111,7 +160,7 @@ def delete_folders():
     print("1. Delete all folders in the current path")
     print("2. Delete all folders in a directory")
     print("3. Delete folder(s) by name")
-    choice = input("Enter your choice: ")
+    choice = input(Fore.CYAN +"Enter your choice: ")
 
     if choice == '1':
         delete_all_folders_in_current_path()
@@ -275,7 +324,7 @@ def manage_permissions_and_ownership(folder_path):
     print("Manage Permissions and Ownership:")
     print("1. Change permissions of files and folders")
     print("2. Change ownership of files and folders")
-    choice = input("Enter your choice: ")
+    choice = input(Fore.CYAN +"Enter your choice: ")
 
     if choice == '1':
         change_permissions(folder_path)
@@ -401,22 +450,22 @@ def create_symbolic_link(source_path, link_path):
         print(f"{Fore.YELLOW}Source path not found!")
     except Exception as e:
         print(f"{Fore.RED}An error occurred while creating symbolic link: {e}")
-        
+
 def main():
     while True:
-        print(Style.RESET_ALL + "\nMain Menu:")
-        print("1. Folder Tools")
+        print(Style.RESET_ALL + Fore.RED+ "\nMain Menu:")
+        print(Fore.WHITE + "1. Folder Tools")
         print("2. File Tools")
         print("0. Exit")
-        choice = input("Enter your choice: ")
+        choice = input(Fore.CYAN +"Enter your choice: ")
 
         if choice == '1':
             folder_tools()
         elif choice == '2':
-            # Add functionality for File Tools menu
-            pass
+            file_tools()
         elif choice == '0':
-            print("Exiting the program. Goodbye!")
+            print(Fore.GREEN+"Exiting the program. Goodbye!")
+            print(Style.RESET_ALL)
             break
         else:
             print("Invalid choice!")
