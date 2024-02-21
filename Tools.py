@@ -1,11 +1,31 @@
 import os
 import platform
+
+# Check if colorama package is installed
+try:
+    import colorama
+except ImportError:
+    # Install colorama package
+    os.system("pip install colorama")
+    import colorama
+
+# Check if cryptography package is installed
+try:
+    from cryptography.fernet import Fernet
+except ImportError:
+    # Install cryptography package
+    os.system("pip install cryptography")
+    from cryptography.fernet import Fernet
+
+# Import other necessary modules
 import shutil
+import traceback
 import hashlib
 import uuid
-from cryptography.fernet import Fernet
-import shutil
+import string
+import random
 import datetime
+import zipfile
 from colorama import Fore, Style
 
 def folder_tools():
@@ -130,10 +150,11 @@ def file_tools():
         decompress_file(file_path)        
     elif choice == '7':
         file_path = input("Enter the path of the file to encrypt: ")
-        encrypt_file(file_path)        
+        encrypt_file(file_path) 
     elif choice == '8':
-        file_path = input("Enter the path of the file to decrypt: ")
-        decrypt_file(file_path)         
+        encrypted_file_path = input("Enter the path of the file to decrypt: ")
+        key = input("Enter the decryption key: ")
+        decrypt_file(encrypted_file_path, key)        
     elif choice == '9':
         # Implement file editing
         pass
@@ -541,9 +562,8 @@ def decompress_file(file_path):
         print("File not found!")
     except Exception as e:
         print(f"An error occurred: {e}")
-def encrypt_file(file_path):
+def encrypt_file(file_path, key):
     try:
-        key = Fernet.generate_key()
         cipher = Fernet(key)
 
         with open(file_path, 'rb') as f:
@@ -560,24 +580,73 @@ def encrypt_file(file_path):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-def decrypt_file(file_path):
+
+def generate_key():
+    """Generate a random Fernet key."""
+    return Fernet.generate_key().decode()
+
+def encrypt_file(file_path):
     try:
-        key = Fernet.generate_key()
-        cipher = Fernet(key)
+        # Generate a random key
+        key = generate_key()
+        cipher = Fernet(key.encode())
 
         with open(file_path, 'rb') as f:
-            encrypted_text = f.read()
+            plaintext = f.read()
 
-        decrypted_text = cipher.decrypt(encrypted_text)
+        encrypted_text = cipher.encrypt(plaintext)
 
-        with open(os.path.splitext(file_path)[0], 'wb') as f:
-            f.write(decrypted_text)
+        with open(file_path + '.enc', 'wb') as f:
+            f.write(encrypted_text)
 
-        print("File decrypted successfully.")
+        print("File encrypted successfully.")
+        print(f"Key: {key}")
+        print("Please save this key securely. You will need it for decryption.")
     except FileNotFoundError:
         print("File not found!")
     except Exception as e:
         print(f"An error occurred: {e}")
+
+
+def decrypt_file(encrypted_file_path, key):
+    try:
+        # Check if the file exists
+        if not os.path.exists(encrypted_file_path):
+            print("Error: Encrypted file not found!")
+            return
+        
+        # Check if the key is in the correct format
+        if len(key) != 44 or not all(c in string.ascii_letters + string.digits + '-_=' for c in key):
+            raise ValueError("Invalid key format. The key must be 44 characters long and URL-safe base64-encoded.")
+
+        cipher = Fernet(key.encode())
+
+        # Read the encrypted file
+        with open(encrypted_file_path, 'rb') as f:
+            encrypted_text = f.read()
+
+        # Decrypt the file
+        decrypted_text = cipher.decrypt(encrypted_text)
+
+        # Write the decrypted content to a new file
+        decrypted_file_path = encrypted_file_path[:-4]  # Remove the '.enc' extension
+        with open(decrypted_file_path, 'wb') as f:
+            f.write(decrypted_text)
+
+        print("File decrypted successfully.")
+    except ValueError as ve:
+        print(f"Error: {ve}")
+    except FileNotFoundError:
+        print("Error: Encrypted file not found!")
+    except Exception as e:
+        print("An error occurred during decryption:")
+        print(traceback.format_exc())
+
+
+
+
+
+
 def main():
     while True:
         print(Style.RESET_ALL + Fore.RED+ "\nMain Menu:")
