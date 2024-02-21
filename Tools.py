@@ -3,7 +3,8 @@ import platform
 import shutil
 import hashlib
 import uuid
-import filecmp
+from cryptography.fernet import Fernet
+import shutil
 import datetime
 from colorama import Fore, Style
 
@@ -73,6 +74,24 @@ def folder_tools():
     else:
         print("Invalid choice!")
 
+def delete_folders():
+    print(Fore.YELLOW + "Delete Folder(s) Menu:")
+    print("1. Delete all folders in the current path")
+    print("2. Delete all folders in a directory")
+    print("3. Delete folder(s) by name")
+    choice = input(Fore.CYAN +"Enter your choice: ")
+
+    if choice == '1':
+        delete_all_folders_in_current_path()
+    elif choice == '2':
+        folder_path = input("Enter the path of the directory: ")
+        delete_all_folders(folder_path)
+    elif choice == '3':
+        folder_names = input("Enter the name(s) of the folder(s) to delete (separated by commas): ")
+        delete_folders_by_name(folder_names)
+    else:
+        print("Invalid choice!")
+
 
 def file_tools():
     print(Fore.RED + "\nFile Tools Menu:")
@@ -80,46 +99,81 @@ def file_tools():
     print("2. File Operations")
     print("3. File Comparison")
     print("4. File Search")
-    print("5. File Compression")
-    print("6. File Encryption/Decryption")
-    print("7. File Editing")
-    print("8. File Permissions")
-    print("9. File Hashing")
-    print("10. File Conversion")
+    print("5. File Compress")
+    print("6. File DeCompress")
+    print("7. File Encryption")
+    print("8. File Decryption")
+    print("9. File Editing")
+    print("10. File Permissions")
+    print("11. File Hashing")
+    print("12. File Conversion")
     choice = input(Fore.CYAN +"Enter your choice: ")
+    print(Fore.RESET)
     if choice == '1':
         file_path = input("Enter the path of the file: ")
         view_file_details(file_path)
     elif choice == '2':
-        # Implement file operations
-        pass
+        file_operations()
     elif choice == '3':
-        # Implement file comparison
-        pass
+        file1_path = input("Enter the path of the first file: ")
+        file2_path = input("Enter the path of the second file: ")
+        compare_files(file1_path, file2_path)
     elif choice == '4':
-        # Implement file search
-        pass
+        folder_path = input("Enter the path of the folder to search in: ")
+        file_name = input("Enter the name of the file to search for: ")
+        search_for_file(folder_path, file_name)
     elif choice == '5':
-        # Implement file compression
-        pass
+        file_path = input("Enter the path of the file to compress: ")
+        compress_file(file_path)        
     elif choice == '6':
-        # Implement file encryption/decryption
-        pass
+        file_path = input("Enter the path of the file to decompress: ")
+        decompress_file(file_path)        
     elif choice == '7':
+        file_path = input("Enter the path of the file to encrypt: ")
+        encrypt_file(file_path)        
+    elif choice == '8':
+        file_path = input("Enter the path of the file to decrypt: ")
+        decrypt_file(file_path)         
+    elif choice == '9':
         # Implement file editing
         pass
-    elif choice == '8':
+    elif choice == '10':
         # Implement file permissions
         pass
-    elif choice == '9':
+    elif choice == '11':
         # Implement file hashing
         pass
-    elif choice == '10':
+    elif choice == '12':
         # Implement file conversion
         pass
     else:
         print("Invalid choice!")
 
+def file_operations():
+    print("File Operations Menu:")
+    print("1. Copy File")
+    print("2. Move File")
+    print("3. Rename File")
+    print("4. Delete File")
+    choice = input("Enter your choice: ")
+
+    if choice == '1':
+        source_path = input("Enter the path of the source file: ")
+        destination_path = input("Enter the path of the destination file: ")
+        copy_file(source_path, destination_path)
+    elif choice == '2':
+        source_path = input("Enter the path of the source file: ")
+        destination_path = input("Enter the path of the destination file: ")
+        move_file(source_path, destination_path)
+    elif choice == '3':
+        file_path = input("Enter the full path of the file to rename: ")
+        new_name = input("Enter the new name: ")
+        rename_file(file_path, new_name)
+    elif choice == '4':
+        file_path = input("Enter the path of the file to delete: ")
+        delete_file(file_path)
+    else:
+        print("Invalid choice!")
 
 def list_folder_contents(folder_path):
     try:
@@ -148,30 +202,13 @@ def create_folder(folder_name):
     folder_names = folder_name.split(',')
     for name in folder_names:
         try:
-            os.mkdir(name.strip())  # Use strip() to remove any leading or trailing whitespace
+            os.mkdir(name.strip()) 
             print(f"{Fore.GREEN}Folder '{name.strip()}' created successfully.")
         except FileExistsError:
             print(f"{Fore.YELLOW}Folder '{name.strip()}' already exists!")
         except Exception as e:
             print(f"{Fore.RED}An error occurred while creating folder '{name.strip()}': {e}")
 
-def delete_folders():
-    print(Fore.YELLOW + "Delete Folder(s) Menu:")
-    print("1. Delete all folders in the current path")
-    print("2. Delete all folders in a directory")
-    print("3. Delete folder(s) by name")
-    choice = input(Fore.CYAN +"Enter your choice: ")
-
-    if choice == '1':
-        delete_all_folders_in_current_path()
-    elif choice == '2':
-        folder_path = input("Enter the path of the directory: ")
-        delete_all_folders(folder_path)
-    elif choice == '3':
-        folder_names = input("Enter the name(s) of the folder(s) to delete (separated by commas): ")
-        delete_folders_by_name(folder_names)
-    else:
-        print("Invalid choice!")
 
 def delete_all_folders_in_current_path():
     current_path = os.getcwd()
@@ -191,7 +228,7 @@ def delete_folders_by_name(folder_names):
     names = folder_names.split(',')
     for name in names:
         try:
-            shutil.rmtree(name.strip())  # Use strip() to remove any leading or trailing whitespace
+            shutil.rmtree(name.strip())  
             print(f"{Fore.GREEN}Folder '{name.strip()}' deleted successfully.")
         except FileNotFoundError:
             print(f"{Fore.YELLOW}Folder '{name.strip()}' not found!")
@@ -270,25 +307,18 @@ def compress_folder(folder_path):
     print(f"{Fore.GREEN}Folder compressed successfully.")
 
 def find_duplicates(folder_path):
-    # Dictionary to store file hashes
     hash_map = {}
     duplicates = []
 
-    # Iterate through all files in the folder and subfolders
     for root, _, files in os.walk(folder_path):
         for file in files:
             file_path = os.path.join(root, file)
-            # Calculate hash of the file
             file_hash = hash_file(file_path)
-            # Check if the hash exists in the dictionary
             if file_hash in hash_map:
-                # Duplicate found
                 duplicates.append((file_path, hash_map[file_hash]))
             else:
-                # Add hash to the dictionary
                 hash_map[file_hash] = file_path
 
-    # Prompt user for choice
     if duplicates:
         print("Duplicates found:")
         for duplicate in duplicates:
@@ -296,12 +326,10 @@ def find_duplicates(folder_path):
             print(f"Original file: {duplicate[1]}")
         choice = input("Do you want to delete the original files? (yes/no): ")
         if choice.lower() == 'yes':
-            # Delete all original files
             for duplicate in duplicates:
                 os.remove(duplicate[1])
                 print(f"Original file '{duplicate[1]}' deleted.")
         else:
-            # Delete all duplicate files
             for duplicate in duplicates:
                 os.remove(duplicate[0])
                 print(f"Duplicate file '{duplicate[0]}' deleted.")
@@ -309,14 +337,10 @@ def find_duplicates(folder_path):
         print("No duplicates found.")
 
 def hash_file(file_path):
-    # Read the file in binary mode
     with open(file_path, 'rb') as f:
-        # Create hash object
         hash_object = hashlib.md5()
-        # Update hash object with file contents
         while chunk := f.read(4096):
             hash_object.update(chunk)
-        # Get the hexadecimal digest
         file_hash = hash_object.hexdigest()
     return file_hash
 
@@ -383,7 +407,6 @@ def compare_folders():
     print(f"Folder 1: {folder1_path}")
     print(f"Folder 2: {folder2_path}")
 
-    # Check if the paths are valid directories
     if not os.path.isdir(folder1_path):
         print(f"Error: {folder1_path} is not a valid directory.")
         return
@@ -391,15 +414,12 @@ def compare_folders():
         print(f"Error: {folder2_path} is not a valid directory.")
         return
 
-    # Get the immediate contents of each folder
     folder1_contents = set(os.listdir(folder1_path))
     folder2_contents = set(os.listdir(folder2_path))
 
-    # Calculate the differences
     files_only_in_folder1 = folder1_contents - folder2_contents
     files_only_in_folder2 = folder2_contents - folder1_contents
 
-    # Print out the differences
     if files_only_in_folder1:
         print(f"Files only in {folder1_path}:")
         for file in files_only_in_folder1:
@@ -422,7 +442,6 @@ def compare_folders():
     else:
         print(f"No common files.")
 
-    # Compare immediate subdirectories
     subdirectories_only_in_folder1 = [d for d in folder1_contents if os.path.isdir(os.path.join(folder1_path, d)) and d not in folder2_contents]
     if subdirectories_only_in_folder1:
         print(f"Subdirectories only in {folder1_path}:")
@@ -450,7 +469,115 @@ def create_symbolic_link(source_path, link_path):
         print(f"{Fore.YELLOW}Source path not found!")
     except Exception as e:
         print(f"{Fore.RED}An error occurred while creating symbolic link: {e}")
+def copy_file(source_path, destination_path):
+    try:
+        shutil.copy2(source_path, destination_path)
+        print("File copied successfully.")
+    except FileNotFoundError:
+        print("Source file not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
+def move_file(source_path, destination_path):
+    try:
+        shutil.move(source_path, destination_path)
+        print("File moved successfully.")
+    except FileNotFoundError:
+        print("Source file not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def rename_file(file_path, new_name):
+    try:
+        directory, old_name = os.path.split(file_path)
+        new_file_path = os.path.join(directory, new_name)
+        os.rename(file_path, new_file_path)
+        print("File renamed successfully.")
+    except FileNotFoundError:
+        print("File not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+def delete_file(file_path):
+    try:
+        os.remove(file_path)
+        print("File deleted successfully.")
+    except FileNotFoundError:
+        print("File not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def compare_files(file1_path, file2_path):
+    try:
+        # Read the contents of the files
+        with open(file1_path, 'r') as file1, open(file2_path, 'r') as file2:
+            content1 = file1.read()
+            content2 = file2.read()
+
+        # Compare the contents
+        if content1 == content2:
+            print("The files are identical.")
+        else:
+            print("The files are different.")
+    except FileNotFoundError:
+        print("One or both files not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+def compress_file(file_path):
+    try:
+        with zipfile.ZipFile(file_path + '.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(file_path, os.path.basename(file_path))
+        print("File compressed successfully.")
+    except FileNotFoundError:
+        print("File not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def decompress_file(file_path):
+    try:
+        with zipfile.ZipFile(file_path, 'r') as zipf:
+            zipf.extractall(os.path.dirname(file_path))
+        print("File decompressed successfully.")
+    except FileNotFoundError:
+        print("File not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+def encrypt_file(file_path):
+    try:
+        key = Fernet.generate_key()
+        cipher = Fernet(key)
+
+        with open(file_path, 'rb') as f:
+            plaintext = f.read()
+
+        encrypted_text = cipher.encrypt(plaintext)
+
+        with open(file_path + '.enc', 'wb') as f:
+            f.write(encrypted_text)
+
+        print("File encrypted successfully.")
+    except FileNotFoundError:
+        print("File not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def decrypt_file(file_path):
+    try:
+        key = Fernet.generate_key()
+        cipher = Fernet(key)
+
+        with open(file_path, 'rb') as f:
+            encrypted_text = f.read()
+
+        decrypted_text = cipher.decrypt(encrypted_text)
+
+        with open(os.path.splitext(file_path)[0], 'wb') as f:
+            f.write(decrypted_text)
+
+        print("File decrypted successfully.")
+    except FileNotFoundError:
+        print("File not found!")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 def main():
     while True:
         print(Style.RESET_ALL + Fore.RED+ "\nMain Menu:")
