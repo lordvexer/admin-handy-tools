@@ -15,12 +15,14 @@ except ImportError:
     # Install Pillow package
     os.system("pip install Pillow")
     from PIL import Image
+
 try:
     from moviepy.editor import VideoFileClip
 except ImportError:
     # Install Pillow moviepy package
     os.system("pip install Pillow moviepy")
     from moviepy.editor import VideoFileClip
+
 
 # Check if cryptography package is installed
 try:
@@ -41,6 +43,33 @@ import random
 import datetime
 import zipfile
 from colorama import Fore, Style
+import moviepy.editor as mp
+import subprocess
+
+# Check if ffmpeg is installed
+def check_ffmpeg():
+    if platform.system() == "Windows":
+        # Check if ffmpeg executable exists in PATH
+        result = os.system("where ffmpeg")
+    else:
+        # Check if ffmpeg executable exists in PATH
+        result = os.system("which ffmpeg")
+    return result == 0
+
+# Install ffmpeg if not found
+def install_ffmpeg():
+    print("Installing ffmpeg...")
+    if platform.system() == "Windows":
+        # Download and install ffmpeg for Windows
+        os.system("choco install ffmpeg")
+    else:
+        # Install ffmpeg using package manager (e.g., apt for Debian-based systems)
+        os.system("sudo apt-get install ffmpeg")
+
+# Check and install ffmpeg if necessary
+if not check_ffmpeg():
+    install_ffmpeg()
+
 
 def folder_tools():
     print(Fore.RED + "\nFolder Tools Menu:")
@@ -283,18 +312,16 @@ def conversion_tools():
     choice = input("Enter your choice (1 or 2): ")
 
     if choice == '1':
-        input_file = input("Enter the path of the input photo: ")
-        output_file = input("Enter the full path of the output photo (including file name and extension): ")
-        output_format = input("Enter the desired format (e.g., PNG, JPEG): ").upper()
-        convert_photo_to_format(input_file, output_file, output_format)
+        input_path = input("Enter the path of the input photo: ")
+        output_path = input("Enter the full path of the output photo (including file name and extension): ")
+        convert_photo(input_path, output_path)
     elif choice == '2':
-        input_file = input("Enter the path of the input video: ")
-        output_file = input("Enter the full path of the output video (including file name and extension): ")
-        output_format = input("Enter the desired codec (e.g., libx264): ")
-        convert_video_to_format(input_file, output_file, output_format)
+        input_path = input("Enter the path of the input video: ")
+        output_path = input("Enter the full path of the output video (including file name and extension): ")
+        output_format = input("Available output formats for videos: ['mp4', 'avi', 'mov', 'mkv']\nEnter the desired output format: ")
+        convert_video(input_path, output_path, output_format)
     else:
-        print("Invalid choice.")
-
+        print("Invalid choice. Please enter 1 or 2.")
 
 def count_folders_and_files(folder_path):
     num_folders = 0
@@ -691,33 +718,36 @@ def hash_file(file_path, algorithm='sha256'):
         print(f"An error occurred: {e}")
         return None
 
-def convert_photo_to_format(input_file, output_file, output_format):
-    try:
-        # Open the input image
-        img = Image.open(input_file)
-        
-        # Convert and save with specified format
-        img.save(output_file, format=output_format)
-        
-        print("Image converted successfully.")
-    except FileNotFoundError:
-        print("Input file not found.")
-    except Exception as e:
-        print(f"An error occurred during photo conversion: {e}")
+# Supported input and output formats for videos
+video_formats = ['mp4', 'avi', 'mov', 'mkv']
+video_codecs = ['libx264', 'libvpx', 'mpeg4']
 
-def convert_video_to_format(input_file, output_file, output_format):
+# Supported input and output formats for pictures
+picture_formats = ['jpg', 'jpeg', 'png', 'bmp']
+picture_codecs = ['libjpeg', 'png']
+
+def convert_photo(input_path, output_path, output_format, codec, compress_output):
     try:
-        # Load the input video clip
-        video_clip = VideoFileClip(input_file)
+        clip = mp.ImageClip(input_path)
+        clip.write_videofile(output_path, codec=codec, fps=1)
         
-        # Convert and save with specified format
-        video_clip.write_videofile(output_file, codec=output_format)
+        if compress_output.lower() == "yes":
+            compress_file(output_path)
         
-        print("Video converted successfully.")
-    except FileNotFoundError:
-        print("Input file not found.")
+        print("Photo conversion successful!")
     except Exception as e:
-        print(f"An error occurred during video conversion: {e}")
+        print("An error occurred during photo conversion:", e)
+
+
+
+def convert_video(input_path, output_path, output_format):
+    try:
+        clip = mp.VideoFileClip(input_path)
+        clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
+        print("Video conversion successful!")
+    except Exception as e:
+        print("An error occurred during video conversion:", e)
+
 
 
 def main():
