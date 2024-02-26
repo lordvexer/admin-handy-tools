@@ -319,7 +319,9 @@ def conversion_tools():
         input_path = input("Enter the path of the input video: ")
         output_path = input("Enter the full path of the output video (including file name and extension): ")
         output_format = input("Available output formats for videos: ['mp4', 'avi', 'mov', 'mkv']\nEnter the desired output format: ")
-        convert_video(input_path, output_path, output_format)
+        bitrate_input = input("Enter the desired bitrate (in bits per second), or leave empty for default bitrate: ")
+        bitrate = int(bitrate_input) if bitrate_input else None
+        convert_video(input_path, output_path, output_format, bitrate)
     else:
         print("Invalid choice. Please enter 1 or 2.")
 
@@ -740,13 +742,18 @@ def convert_photo(input_path, output_path, output_format, codec, compress_output
 
 
 
-def convert_video(input_path, output_path, output_format):
+def convert_video(input_path, output_path, output_format, bitrate=None):
     try:
         clip = mp.VideoFileClip(input_path)
-        clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
+        if bitrate:
+            clip.write_videofile(output_path, codec='libx264', audio_codec='aac', bitrate=f"{bitrate}k")
+        else:
+            clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
         print("Video conversion successful!")
     except Exception as e:
         print("An error occurred during video conversion:", e)
+
+
 
 
 
