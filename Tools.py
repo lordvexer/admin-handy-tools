@@ -41,6 +41,7 @@ import uuid
 import string
 import random
 import datetime
+import getpass
 import zipfile
 from colorama import Fore, Style
 import moviepy.editor as mp
@@ -302,6 +303,48 @@ def conversion_tools():
     else:
         print("Invalid choice. Please enter 1 or 2.")
 
+def admin_tools():
+    print(Fore.RED+"Administrator Tools Menu:")
+    print("1. Show System Users")
+    print("2. Add user(s)")
+    print("3. Remove user(s)")
+    choice = input("Enter your choice (1 or 2): ")
+    if choice == '1':
+        if platform.system() == "Windows":
+            show_system_users_windows()
+        elif platform.system() == "Linux":
+            show_system_users_linux()
+        else:
+            print("Unsupported operating system")
+    elif choice == '2':
+        usernumber=input('Set Number of users need to Create: ')
+        if usernumber == '1':
+             if platform.system() == "Windows":
+                 username=input("Enter Username :")
+                 password=input("Enter Password :")
+                 add_user_windows(username, password)
+             elif platform.system() == "Linux":
+                 username=input("Enter Username :")
+                 password=input("Enter Password :")
+                 add_user_linux(username, password)
+             else:
+                print("Unsupported operating system")
+        else:
+            add_users(int(usernumber))
+    elif choice == '3':
+            print("1. Delete Special User")
+            print("2. Delete All Users")
+            choice=input('Enter your choice: ')
+            if choice=='1':
+                username=input("Enter Username To Delete: ")
+                delete_user(username)
+            elif choice=='2':
+                delete_All_users()
+            else:
+                print('Wrong Choice!!')
+
+    else:
+        print("Invalid choice. Please enter 1 or 2.")
 def count_folders_and_files(folder_path):
     num_folders = 0
     num_files = 0
@@ -730,8 +773,88 @@ def convert_video(input_path, output_path, output_format, bitrate=None):
     except Exception as e:
         print("An error occurred during video conversion:", e)
 
+def show_system_users_windows():
+    os.system("net user")
+
+def show_system_users_linux():
+    with open("/etc/passwd", "r") as passwd_file:
+        for line in passwd_file:
+            username = line.split(":")[0]
+            print(username)
+
+def add_users(usernumber):
+    for i in range(usernumber):
+        # Generate random username and password
+        username = generate_random_username(8)
+        password = generate_random_password()
+        if platform.system() == "Windows":
+            add_user_windows(username, password)
+        elif platform.system() == "Linux":
+            add_user_linux(username, password)
+        else:
+            print("Unsupported operating system")
+
+def add_user_windows(username, password):
+    os.system(f"net user {username} {password} /add")
+
+def add_user_linux(username, password):
+    os.system(f"sudo useradd -m {username} -p {password}")
 
 
+def generate_random_username(length=8):
+    allowed_chars = string.ascii_letters + string.digits
+    username = ''.join(random.choice(allowed_chars) for _ in range(length))
+    return username
+
+def generate_random_password(length=12, complexity=3):
+    lowercase_chars = string.ascii_lowercase
+    uppercase_chars = string.ascii_uppercase
+    digit_chars = string.digits
+    special_chars = string.punctuation
+    complexity = min(complexity, 4)
+    password_chars = [random.choice(lowercase_chars),
+                      random.choice(uppercase_chars),
+                      random.choice(digit_chars)]
+    if complexity == 4:
+        password_chars.append(random.choice(special_chars))
+
+    password_chars.extend(random.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(length - complexity))
+
+    random.shuffle(password_chars)
+
+    password = ''.join(password_chars)
+
+    return password
+
+def delete_user(username):
+
+    if platform.system() == "Windows":
+        os.system(f"net user {username} /delete")
+        print(f"User '{username}' deleted successfully.")
+    elif platform.system() == "Linux":
+        os.system(f"sudo userdel -r {username}")
+        print(f"User '{username}' deleted successfully.")
+    else:
+        print("Unsupported operating system.")
+
+def delete_All_users():
+    current_user = getpass.getuser()
+    print("Current User:", current_user)
+    
+    if platform.system() == "Windows":
+        users = os.popen("net user").read().split()[5:]
+        for user in users:
+            if user.lower() != current_user.lower():
+                os.system(f"net user {user} /delete")
+                print(f"User '{user}' deleted successfully.")
+    elif platform.system() == "Linux":
+        users = os.popen("cut -d: -f1 /etc/passwd").read().split('\n')[:-1]
+        for user in users:
+            if user != current_user:
+                os.system(f"sudo userdel -r {user}")
+                print(f"User '{user}' deleted successfully.")
+    else:
+        print("Unsupported operating system.")
 
 
 def main():
@@ -739,6 +862,7 @@ def main():
         print(Style.RESET_ALL + Fore.RED+ "\nMain Menu:")
         print(Fore.WHITE + "1. Folder Tools")
         print("2. File Tools")
+        print("3. Admin Tools")
         print("0. Exit")
         choice = input(Fore.CYAN +"Enter your choice: ")
 
@@ -746,6 +870,8 @@ def main():
             folder_tools()
         elif choice == '2':
             file_tools()
+        elif choice == '3':
+            admin_tools()
         elif choice == '0':
             print(Fore.GREEN+"Exiting the program. Goodbye!")
             print(Style.RESET_ALL)
