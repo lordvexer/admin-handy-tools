@@ -9,6 +9,19 @@ except ImportError:
     os.system("pip install colorama")
     import colorama
 
+try:
+    from PIL import Image
+except ImportError:
+    # Install Pillow package
+    os.system("pip install Pillow")
+    from PIL import Image
+try:
+    from moviepy.editor import VideoFileClip
+except ImportError:
+    # Install Pillow moviepy package
+    os.system("pip install Pillow moviepy")
+    from moviepy.editor import VideoFileClip
+
 # Check if cryptography package is installed
 try:
     from cryptography.fernet import Fernet
@@ -19,6 +32,7 @@ except ImportError:
 
 # Import other necessary modules
 import shutil
+import hashlib
 import traceback
 import hashlib
 import uuid
@@ -123,10 +137,9 @@ def file_tools():
     print("6. File DeCompress")
     print("7. File Encryption")
     print("8. File Decryption")
-    print("9. File Editing")
-    print("10. File Permissions")
-    print("11. File Hashing")
-    print("12. File Conversion")
+    print("9. File Permissions")
+    print("10. File Hashing")
+    print("11. File Conversion")
     choice = input(Fore.CYAN +"Enter your choice: ")
     print(Fore.RESET)
     if choice == '1':
@@ -156,17 +169,13 @@ def file_tools():
         key = input("Enter the decryption key: ")
         decrypt_file(encrypted_file_path, key)        
     elif choice == '9':
-        # Implement file editing
-        pass
+        folder_path = input("Enter the path of the File to manage permissions and ownership: ")
+        manage_permissions_and_ownership(folder_path)        
     elif choice == '10':
-        # Implement file permissions
-        pass
+        file_path = input("Enter the path of the File: ")
+        hash_file(file_path)
     elif choice == '11':
-        # Implement file hashing
-        pass
-    elif choice == '12':
-        # Implement file conversion
-        pass
+        conversion_tools()
     else:
         print("Invalid choice!")
 
@@ -266,6 +275,26 @@ def show_folder_info(folder_path):
     print(f"Last Modified: {get_last_modified(folder_path)}")
     print(f"First Modified: {get_first_modified(folder_path)}")
     print(f"Total Size: {get_folder_size(folder_path)} bytes")
+
+def conversion_tools():
+    print("Options:")
+    print("1. Convert Photo")
+    print("2. Convert Video")
+    choice = input("Enter your choice (1 or 2): ")
+
+    if choice == '1':
+        input_file = input("Enter the path of the input photo: ")
+        output_file = input("Enter the full path of the output photo (including file name and extension): ")
+        output_format = input("Enter the desired format (e.g., PNG, JPEG): ").upper()
+        convert_photo_to_format(input_file, output_file, output_format)
+    elif choice == '2':
+        input_file = input("Enter the path of the input video: ")
+        output_file = input("Enter the full path of the output video (including file name and extension): ")
+        output_format = input("Enter the desired codec (e.g., libx264): ")
+        convert_video_to_format(input_file, output_file, output_format)
+    else:
+        print("Invalid choice.")
+
 
 def count_folders_and_files(folder_path):
     num_folders = 0
@@ -642,9 +671,53 @@ def decrypt_file(encrypted_file_path, key):
         print("An error occurred during decryption:")
         print(traceback.format_exc())
 
+def hash_file(file_path, algorithm='sha256'):
+    try:
+        # Create a hash object based on the specified algorithm
+        hasher = hashlib.new(algorithm)
+        
+        # Read the file in binary mode and update the hasher with its content
+        with open(file_path, 'rb') as f:
+            while chunk := f.read(4096):  # Read the file in chunks to handle large files
+                hasher.update(chunk)
+        
+        # Return the hexadecimal representation of the digest
+        return hasher.hexdigest()
+    
+    except FileNotFoundError:
+        print("File not found!")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
+def convert_photo_to_format(input_file, output_file, output_format):
+    try:
+        # Open the input image
+        img = Image.open(input_file)
+        
+        # Convert and save with specified format
+        img.save(output_file, format=output_format)
+        
+        print("Image converted successfully.")
+    except FileNotFoundError:
+        print("Input file not found.")
+    except Exception as e:
+        print(f"An error occurred during photo conversion: {e}")
 
-
+def convert_video_to_format(input_file, output_file, output_format):
+    try:
+        # Load the input video clip
+        video_clip = VideoFileClip(input_file)
+        
+        # Convert and save with specified format
+        video_clip.write_videofile(output_file, codec=output_format)
+        
+        print("Video converted successfully.")
+    except FileNotFoundError:
+        print("Input file not found.")
+    except Exception as e:
+        print(f"An error occurred during video conversion: {e}")
 
 
 def main():
