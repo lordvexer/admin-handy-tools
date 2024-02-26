@@ -46,29 +46,6 @@ from colorama import Fore, Style
 import moviepy.editor as mp
 import subprocess
 
-# Check if ffmpeg is installed
-def check_ffmpeg():
-    if platform.system() == "Windows":
-        # Check if ffmpeg executable exists in PATH
-        result = os.system("where ffmpeg")
-    else:
-        # Check if ffmpeg executable exists in PATH
-        result = os.system("which ffmpeg")
-    return result == 0
-
-# Install ffmpeg if not found
-def install_ffmpeg():
-    print("Installing ffmpeg...")
-    if platform.system() == "Windows":
-        # Download and install ffmpeg for Windows
-        os.system("choco install ffmpeg")
-    else:
-        # Install ffmpeg using package manager (e.g., apt for Debian-based systems)
-        os.system("sudo apt-get install ffmpeg")
-
-# Check and install ffmpeg if necessary
-if not check_ffmpeg():
-    install_ffmpeg()
 
 
 def folder_tools():
