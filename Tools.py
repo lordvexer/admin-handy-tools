@@ -15,7 +15,20 @@ except ImportError:
     # Install Pillow package
     os.system("pip install Pillow")
     from PIL import Image
-
+try:
+    import psutil
+except ImportError:
+    # Install Pillow package
+    os.system("pip install psutil")
+    import psutil
+    
+try:
+    import curses
+except ImportError:
+    # Install Pillow package
+    os.system("pip install windows-curses")
+    import curses
+    
 try:
     from moviepy.editor import VideoFileClip
 except ImportError:
@@ -46,10 +59,19 @@ import zipfile
 from colorama import Fore, Style
 import moviepy.editor as mp
 import subprocess
+import psutil
+import curses
+import subprocess
+import time
+import socket
+import sys
+
+
 
 
 
 def folder_tools():
+    Clear_Screen()
     print(Fore.RED + "\nFolder Tools Menu:")
     print(Fore.YELLOW + "1. List contents of a folder")
     print("2. Create a new folder")
@@ -64,6 +86,7 @@ def folder_tools():
     print("11. View file details")
     print("12. Compare folders")
     print("13. Create symbolic links")
+    print("0. Back")
     choice = input(Fore.CYAN +"Enter your choice: ")
 
     if choice == '1':
@@ -112,14 +135,18 @@ def folder_tools():
         source_path = input("Enter the path of the source file or folder: ")
         link_path = input("Enter the path of the symbolic link: ")
         create_symbolic_link(source_path, link_path)
+    elif choice == '0':
+         main()
     else:
         print("Invalid choice!")
 
 def delete_folders():
-    print(Fore.YELLOW + "Delete Folder(s) Menu:")
-    print("1. Delete all folders in the current path")
+    Clear_Screen()
+    print(Fore.RED + "\nDelete Folder(s) Menu:")
+    print(Fore.YELLOW + "1. Delete all folders in the current path")
     print("2. Delete all folders in a directory")
     print("3. Delete folder(s) by name")
+    print("0. Back")
     choice = input(Fore.CYAN +"Enter your choice: ")
 
     if choice == '1':
@@ -130,11 +157,14 @@ def delete_folders():
     elif choice == '3':
         folder_names = input("Enter the name(s) of the folder(s) to delete (separated by commas): ")
         delete_folders_by_name(folder_names)
+    elif choice == '0':
+         folder_tools()
     else:
         print("Invalid choice!")
 
 
 def file_tools():
+    Clear_Screen()
     print(Fore.RED + "\nFile Tools Menu:")
     print(Fore.YELLOW + "1. File Information")
     print("2. File Operations")
@@ -147,6 +177,8 @@ def file_tools():
     print("9. File Permissions")
     print("10. File Hashing")
     print("11. File Conversion")
+    print("0. Back")
+
     choice = input(Fore.CYAN +"Enter your choice: ")
     print(Fore.RESET)
     if choice == '1':
@@ -183,15 +215,20 @@ def file_tools():
         hash_file(file_path)
     elif choice == '11':
         conversion_tools()
+    elif choice == '0':
+        main()
     else:
         print("Invalid choice!")
 
 def file_operations():
-    print("File Operations Menu:")
-    print("1. Copy File")
+    Clear_Screen()
+    print(Fore.RED+"\nFile Operations Menu:")
+    print(Fore.YELLOW +"1. Copy File")
     print("2. Move File")
     print("3. Rename File")
     print("4. Delete File")
+    print("0. Back")
+
     choice = input("Enter your choice: ")
 
     if choice == '1':
@@ -209,6 +246,8 @@ def file_operations():
     elif choice == '4':
         file_path = input("Enter the path of the file to delete: ")
         delete_file(file_path)
+    elif choice == '0':
+        file_tools()
     else:
         print("Invalid choice!")
 
@@ -284,10 +323,12 @@ def show_folder_info(folder_path):
     print(f"Total Size: {get_folder_size(folder_path)} bytes")
 
 def conversion_tools():
-    print("Options:")
-    print("1. Convert Photo")
+    Clear_Screen()
+    print(Fore.RED+"\nOptions:")
+    print(Fore.YELLOW +"1. Convert Photo")
     print("2. Convert Video")
-    choice = input("Enter your choice (1 or 2): ")
+    print("0. Back")
+    choice = input("Enter your choice: ")
 
     if choice == '1':
         input_path = input("Enter the path of the input photo: ")
@@ -300,15 +341,20 @@ def conversion_tools():
         bitrate_input = input("Enter the desired bitrate (in bits per second), or leave empty for default bitrate: ")
         bitrate = int(bitrate_input) if bitrate_input else None
         convert_video(input_path, output_path, output_format, bitrate)
+    elif choice == '0':
+        conversion_tools()
     else:
-        print("Invalid choice. Please enter 1 or 2.")
+        print("Invalid choice!")
 
 def admin_tools():
-    print(Fore.RED+"Administrator Tools Menu:")
-    print("1. Show System Users")
+    Clear_Screen()
+    print(Fore.RED+"\nAdministrator Tools Menu:")
+    print(Fore.YELLOW +"1. Show System Users")
     print("2. Add user(s)")
     print("3. Remove user(s)")
-    choice = input("Enter your choice (1 or 2): ")
+    print("0. Back")
+
+    choice = input("Enter your choice: ")
     if choice == '1':
         if platform.system() == "Windows":
             show_system_users_windows()
@@ -332,19 +378,83 @@ def admin_tools():
         else:
             add_users(int(usernumber))
     elif choice == '3':
-            print("1. Delete Special User")
+            print(Fore.RED+"\nChoose Your Options:")
+            print(Fore.YELLOW +"1. Delete Special User")
             print("2. Delete All Users")
             choice=input('Enter your choice: ')
             if choice=='1':
                 username=input("Enter Username To Delete: ")
                 delete_user(username)
             elif choice=='2':
-                delete_All_users()
+                delete_all_users_except_current()
             else:
-                print('Wrong Choice!!')
-
+                print(Fore.RED+'Wrong Choice!!')
+    elif choice == '0':
+        main()
     else:
-        print("Invalid choice. Please enter 1 or 2.")
+        print(Fore.RED+"Invalid choice...")
+
+def Monitor_tools():
+         Clear_Screen()
+         print(Fore.RED+"\nMonitoring Tools Menu:")
+         print(Fore.YELLOW +"1. Show Task Manager")
+         print("2. Show Hardware Usage")
+         print("3. Show System info")
+         print("0. Back")
+         choice=input("Enter Your Choice:")
+         if choice=='1':
+             display_processes()
+         elif choice=='2':
+             display_hardware_usage()
+         elif choice=='3':
+             display_system_info()
+         elif choice=='0':
+             main()
+         else:
+             print(Fore.RED+"Invalid choice...")
+             
+def Network_Tools():
+    Clear_Screen()
+    print(Fore.RED+"\nNetwork Tools Menu:")
+    print(Fore.YELLOW +"1. Show Network Connection")
+    print("2. Scan Open Ports")
+    print("3. Network Scaner")
+    print("4. Show Network Connection info")
+    print("0. Back")
+    choice=input("Enter Your Choice:")
+    if choice=='1':
+        Network_connections()()
+    elif choice=='2':
+        scan_open_ports()
+    elif choice=='3':
+        subnet, ip_range = get_user_input()
+        scan_network(ip_range, subnet)
+        print("\nScanning Complete!")
+    elif choice=='4':
+        Network_connections()
+    elif choice=='0':
+        main()
+    else:
+        print(Fore.RED+"Invalid choice...")
+
+def scan_open_ports():
+    Clear_Screen()
+    print(Fore.RED+"\nScan Port Tools Menu:")
+    print(Fore.YELLOW +"1. Scan On Current Machine")
+    print("2. Scan On Special IP")
+    print("0. Back")
+    choice=input("Enter Your Choice:")
+    if choice=='1':
+        display_open_ports()
+    elif choice=='2':
+        ip_address, port_range = get_user_input_port_scan()
+        open_ports = get_open_ports(ip_address, port_range)
+        print("Open ports:", open_ports)
+    elif choice=='0':
+        main()
+    else:
+        print(Fore.RED+"Invalid choice...")
+        
 def count_folders_and_files(folder_path):
     num_folders = 0
     num_files = 0
@@ -444,8 +554,8 @@ def hash_file(file_path):
     return file_hash
 
 def manage_permissions_and_ownership(folder_path):
-    print("Manage Permissions and Ownership:")
-    print("1. Change permissions of files and folders")
+    print(Fore.RED+"\nManage Permissions and Ownership:")
+    print(Fore.YELLOW +"1. Change permissions of files and folders")
     print("2. Change ownership of files and folders")
     choice = input(Fore.CYAN +"Enter your choice: ")
 
@@ -499,6 +609,7 @@ def view_file_details(file_path):
         print(f"An error occurred: {e}")
 
 def compare_folders():
+    Clear_Screen()
     folder1_path = input("Enter the path of the first folder: ")
     folder2_path = input("Enter the path of the second folder: ")
 
@@ -837,32 +948,200 @@ def delete_user(username):
     else:
         print("Unsupported operating system.")
 
-def delete_All_users():
-    current_user = getpass.getuser()
-    print("Current User:", current_user)
-    
+
+def get_current_username():
+    return getpass.getuser()
+
+def get_user_list():
+  
     if platform.system() == "Windows":
-        users = os.popen("net user").read().split()[5:]
-        for user in users:
-            if user.lower() != current_user.lower():
-                os.system(f"net user {user} /delete")
-                print(f"User '{user}' deleted successfully.")
+        output = os.popen("net user").read()
+        users = [line.split()[0] for line in output.splitlines()[4:] if line.strip()]
     elif platform.system() == "Linux":
-        users = os.popen("cut -d: -f1 /etc/passwd").read().split('\n')[:-1]
-        for user in users:
-            if user != current_user:
-                os.system(f"sudo userdel -r {user}")
-                print(f"User '{user}' deleted successfully.")
+        output = os.popen("cut -d: -f1 /etc/passwd").read()
+        users = output.splitlines()
+    else:
+        print("Unsupported operating system.")
+        users = []
+    return users
+
+def delete_user(username):
+
+    if platform.system() == "Windows":
+        os.system(f"net user {username} /delete")
+        print(f"User '{username}' deleted successfully.")
+    elif platform.system() == "Linux":
+        os.system(f"sudo userdel -r {username}")
+        print(f"User '{username}' deleted successfully.")
     else:
         print("Unsupported operating system.")
 
+def delete_all_users_except_current():
+    current_user = get_current_username()
+    users = get_user_list()
+    for user in users:
+        if user != current_user:
+            delete_user(user)
+
+def display_processes():
+    Clear_Screen()
+    if platform.system() == 'Windows':
+        subprocess.call('tasklist', shell=True)
+    elif platform.system() == 'Linux':
+        subprocess.call('ps aux', shell=True)
+    else:
+        print("Unsupported operating system")
+        
+def display_hardware_usage():
+    Clear_Screen()
+    print("CPU Usage: {}%".format(psutil.cpu_percent(interval=1)))
+    print("Memory Usage: {}%".format(psutil.virtual_memory().percent))
+
+    if platform.system() == 'Windows':
+        print("Disk Usage:")
+        for disk in psutil.disk_partitions():
+            try:
+                usage = psutil.disk_usage(disk.mountpoint)
+                print(f"{disk.device} - Total: {usage.total / (1024 ** 3):.2f} GB, "
+                      f"Used: {usage.used / (1024 ** 3):.2f} GB, "
+                      f"Free: {usage.free / (1024 ** 3):.2f} GB")
+            except PermissionError:
+                continue
+    elif platform.system() == 'Linux':
+        print("Disk Usage:")
+        disk_usage = psutil.disk_usage('/')
+        print(f"Total: {disk_usage.total / (1024 ** 3):.2f} GB, "
+              f"Used: {disk_usage.used / (1024 ** 3):.2f} GB, "
+              f"Free: {disk_usage.free / (1024 ** 3):.2f} GB")
+        
+def display_system_info():
+    Clear_Screen()
+    print("System Information:")
+    print(f"Operating System: {platform.system()} {platform.release()} {platform.version()}")
+    print(f"Machine: {platform.machine()}")
+    print(f"Processor: {platform.processor()}")
+    print("\nCPU Usage:")
+    print(f"  Cores: {psutil.cpu_count(logical=False)} (Physical)")
+    print(f"  Threads: {psutil.cpu_count(logical=True)} (Logical)")
+    print(f"  Usage: {psutil.cpu_percent(interval=1)}%")
+    print("\nMemory Usage:")
+    memory = psutil.virtual_memory()
+    print(f"  Total: {memory.total / (1024 ** 3):.2f} GB")
+    print(f"  Available: {memory.available / (1024 ** 3):.2f} GB")
+    print(f"  Used: {memory.used / (1024 ** 3):.2f} GB ({memory.percent}%)")
+    print(f"  Free: {memory.free / (1024 ** 3):.2f} GB")
+    print("\nDisk Usage:")
+    for partition in psutil.disk_partitions():
+        try:
+            partition_usage = psutil.disk_usage(partition.mountpoint)
+            print(f"  Device: {partition.device}")
+            print(f"    Mountpoint: {partition.mountpoint}")
+            print(f"    Total: {partition_usage.total / (1024 ** 3):.2f} GB")
+            print(f"    Used: {partition_usage.used / (1024 ** 3):.2f} GB ({partition_usage.percent}%)")
+            print(f"    Free: {partition_usage.free / (1024 ** 3):.2f} GB")
+        except PermissionError:
+            continue
+    print("\nNetwork Information:")
+    print("  Network Interfaces:")
+    for interface, addrs in psutil.net_if_addrs().items():
+        print(f"    Interface: {interface}")
+        for addr in addrs:
+            print(f"      {addr.family.name}: {addr.address}")
+            
+def Network_connections():
+    print("\n  Network Connections:")
+    for conn in psutil.net_connections(kind='inet'):
+        laddr = f"{conn.laddr.ip}:{conn.laddr.port}" if conn.laddr else "N/A"
+        raddr = f"{conn.raddr.ip}:{conn.raddr.port}" if conn.raddr else "N/A"
+        print(f"    {laddr} --> {raddr} [{conn.status}]")
+
+
+def display_progress_bar(percent):
+    bar_length = 40
+    progress = int(percent * bar_length)
+    remaining = bar_length - progress
+    bar = f"\033[32m{'█' * progress}\033[0m\033[31m{'-' * remaining}\033[0m"
+    print(f"Scanning : [{bar}] {int(percent * 100)}%", end='\r')
+
+def display_open_ports():
+    Clear_Screen()
+    print(Fore.RED+"Open Ports:")
+    for port in get_open_ports():
+        print(f"    Port {port}")
+
+def get_open_ports():
+    open_ports = []
+    total_ports = 1024  # Total number of ports to scan
+    for i, port in enumerate(range(1, total_ports + 1), 1):
+        percent = i / total_ports
+        display_progress_bar(percent)
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.1)  # Adjust timeout as needed
+                s.connect(("127.0.0.1", port))
+            open_ports.append(port)
+        except:
+            pass
+    print()  # Move to the next line after progress bar
+    return open_ports
+
+def get_open_ports(ip_address, port_range):
+    open_ports = []
+    total_ports = port_range[1] - port_range[0] + 1
+    progress = 0
+    for port in range(port_range[0], port_range[1] + 1):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.1)  # Adjust timeout as needed
+                s.connect((ip_address, port))
+            open_ports.append(port)
+        except:
+            pass
+        progress += 1
+        percent = progress / total_ports
+        display_progress_bar(percent)
+    sys.stdout.write("\n")
+    return open_ports
+
+def get_user_input_port_scan():
+    ip_address = input("Enter the IP address to scan: ")
+    start_port = int(input("Enter the starting port: "))
+    end_port = int(input("Enter the ending port: "))
+    port_range = (start_port, end_port)
+    return ip_address, port_range
+
+def scan_network(ip_range, subnet):
+    total_ips = ip_range[1] - ip_range[0] + 1
+    progress = 0
+    for i in range(ip_range[0], ip_range[1] + 1):
+        ip = f"{subnet}.{i}"
+        try:
+            hostname = socket.gethostbyaddr(ip)[0]
+        except (socket.herror, socket.gaierror):
+            hostname = "N/A"
+        os_info = platform.system()
+        print(f"IP: {ip}, Hostname: {hostname}, OS: {os_info}")
+        progress += 1
+        percent = (progress / total_ips)
+        display_progress_bar(percent)
+
+def get_user_input():
+    subnet = input("Enter the subnet (e.g., 192.168.1): ")
+    start_ip = int(input("Enter the starting IP address (e.g., 1): "))
+    end_ip = int(input("Enter the ending IP address (e.g., 254): "))
+    ip_range = (start_ip, end_ip)
+    return subnet, ip_range
+
 
 def main():
+    Clear_Screen()
     while True:
         print(Style.RESET_ALL + Fore.RED+ "\nMain Menu:")
         print(Fore.WHITE + "1. Folder Tools")
         print("2. File Tools")
         print("3. Admin Tools")
+        print("4. Monitor Tools")
+        print("5. Network Tools")
         print("0. Exit")
         choice = input(Fore.CYAN +"Enter your choice: ")
 
@@ -872,12 +1151,25 @@ def main():
             file_tools()
         elif choice == '3':
             admin_tools()
+        elif choice == '4':
+            Monitor_tools()
+        elif choice == '5':
+            Network_Tools()
         elif choice == '0':
             print(Fore.GREEN+"Exiting the program. Goodbye!")
             print(Style.RESET_ALL)
             break
         else:
             print("Invalid choice!")
+
+
+
+
+def Clear_Screen():
+    if platform.system() == "Windows":
+        os.system("cls")
+    else:
+        os.system("clear")
 
 if __name__ == "__main__":
     if platform.system() == "Windows":
