@@ -420,6 +420,7 @@ def Network_Tools():
     print("2. Scan Open Ports")
     print("3. Network Scaner")
     print("4. Show Network Connection info")
+    print("5. Send Magic Packet")
     print("0. Back")
     choice=input("Enter Your Choice:")
     if choice=='1':
@@ -432,6 +433,10 @@ def Network_Tools():
         print("\nScanning Complete!")
     elif choice=='4':
         Network_connections()
+    elif choice=='5':
+        mac_address, broadcast_address = get_user_input_magic_packet()
+        send_magic_packet(mac_address, broadcast_address)
+        print("Magic packet sent successfully!")
     elif choice=='0':
         main()
     else:
@@ -1131,6 +1136,28 @@ def get_user_input():
     end_ip = int(input("Enter the ending IP address (e.g., 254): "))
     ip_range = (start_ip, end_ip)
     return subnet, ip_range
+
+
+
+def send_magic_packet(mac_address, broadcast_address, port=9):
+    # Clean up MAC address string
+    mac_address = mac_address.replace('-', ':')
+
+    # Construct magic packet
+    mac_bytes = bytearray.fromhex(mac_address.replace(':', ''))
+    magic_packet = b'\xff' * 6 + mac_bytes * 16
+
+    # Create UDP socket
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        # Enable broadcast mode
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        # Send magic packet
+        sock.sendto(magic_packet, (broadcast_address, port))
+
+def get_user_input_magic_packet():
+    mac_address = input("Enter the MAC address of the target device (format: XX:XX:XX:XX:XX:XX): ")
+    broadcast_address = input("Enter the broadcast address of the target network (e.g., 192.168.1.255): ")
+    return mac_address, broadcast_address
 
 
 def main():
