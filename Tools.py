@@ -63,6 +63,7 @@ import random
 import datetime
 import getpass
 import zipfile
+from tqdm import tqdm
 from colorama import Fore, Style
 import moviepy.editor as mp
 import psutil
@@ -360,9 +361,10 @@ def admin_tools():
     Clear_Screen()
     print(Fore.RED+"\nAdministrator Tools Menu:")
     print(Fore.YELLOW +"1. Show System Users")
-    print("2. Add user(s)")
-    print("3. Remove user(s)")
-    print("4. Remove Keyboard(s)")
+    print("2. Show System Users With Passswords")
+    print("3. Add user(s)")
+    print("4. Remove user(s)")
+    print("5. Remove Keyboard(s)")
     print("0. Back")
 
     choice = input("Enter your choice: ")
@@ -374,12 +376,20 @@ def admin_tools():
         else:
             print("Unsupported operating system")
     elif choice == '2':
+        system_users = list_system_users()
+        if system_users:
+            print("System users:")
+            for user in system_users:
+                print(user)
+        else:
+            print("No system users found.")
+    elif choice == '3':
          usernumber = input('Set Number of users need to Create: ')
          if usernumber == '1':
             add_single_user()
          else:
             add_multiple_users(usernumber)
-    elif choice == '3':
+    elif choice == '4':
             print(Fore.RED+"\nChoose Your Options:")
             print(Fore.YELLOW +"1. Delete Special User")
             print("2. Delete All Users")
@@ -392,7 +402,7 @@ def admin_tools():
                 print("Deleted users:", deleted_users)
             else:
                 print(Fore.RED+'Wrong Choice!!')
-    elif choice == '4':
+    elif choice == '5':
         layouts = list_keyboard_layouts()
         print("List of keyboard layout IDs:")
         for i, layout_id in enumerate(layouts):
@@ -487,36 +497,19 @@ def Network_Tools():
         scan_network(ip_range, subnet)
         print("\nScanning Complete!")
     elif choice=='5':
-            host = input("Enter the target IP address: ")
-            port = int(input("Enter the target port: "))
-            total_packets = int(input("Enter Number Of Packets:"))
-            num_threads = int(input("Enter Number Of Thread:"))
-            send_udp_packets_multithread(host, port, total_packets, num_threads)
+            target_ip = input("Enter target IP address: ")
+            target_port = int(input("Enter target port number: "))
+            message = input("Enter message to send: ")
+            num_packets = int(input("Enter number of packets to send: "))
+            num_threads = int(input("Enter number of threads: "))
+            send_udp_packets(target_ip, target_port, message, num_packets, num_threads)
     elif choice=='4':
         mac_address, broadcast_address = get_user_input_magic_packet()
         send_magic_packet(mac_address, broadcast_address)
         print("Magic packet sent successfully!")
     elif choice=='6':
-         ip_address, num_pings,num_thread = get_user_input_ping()
-
-         # Start ping processes in separate threads
-         threads = []
-         for _ in range(num_thread):  # You can change 100 to any desired number of threads
-             thread = threading.Thread(target=ping_target, args=(ip_address, num_pings))
-             thread.start()
-             threads.append(thread)
-
-         # Wait for user input to stop ping processes
-         input("Press Enter to stop pinging...")
-         stop_ping_threads()
-
-         # Join all threads to wait for them to complete
-         for thread in threads:
-             thread.join()
-    elif choice=='0':
-        main()
-    else:
-        print(Fore.RED+"Invalid choice...")
+        ping_with_progress()
+    
 
 def scan_open_ports():
     Clear_Screen()
@@ -973,7 +966,28 @@ def show_system_users_linux():
         for line in passwd_file:
             username = line.split(":")[0]
             print(username)
+            
+def list_system_users():
+    users = []
+    system = platform.system()
+    if system == "Windows":
+        import ctypes
+        import ctypes.wintypes
 
+        advapi32 = ctypes.WinDLL('advapi32')
+        buf_size = ctypes.wintypes.DWORD(1024)
+        buf = ctypes.create_unicode_buffer(buf_size.value)
+        advapi32.GetUserNameW(buf, ctypes.byref(buf_size))
+        users.append(buf.value)
+    elif system == "Linux":
+        import pwd
+        users = [user.pw_name for user in pwd.getpwall()]
+    else:
+        print("Unsupported platform.")
+    return users
+
+    
+        
 def add_single_user():
     if platform.system() == "Windows":
         username = input("Enter Username: ")
@@ -1266,49 +1280,79 @@ def get_user_input_magic_packet():
     broadcast_address = input("Enter the broadcast address of the target network (e.g., 192.168.1.255): ")
     return mac_address, broadcast_address
 
-def send_udp_packet(host, port, num_packets_per_thread):
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        for _ in range(num_packets_per_thread):
-            sock.sendto(b'ping', (host, port))
-        print(f"UDP packets sent to {host}:{port}")
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        sock.close()
 
-def send_udp_packets_multithread(host, port, total_packets, num_threads):
-    num_packets_per_thread = total_packets // num_threads
+def send_udp_packets(target_ip, target_port, message, num_packets, num_threads):
+    # Create a UDP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # Function for each thread to send UDP packets
+    def send_packets(thread_num, progress_bar):
+        for _ in range(num_packets):
+            packet = message.encode('utf-8')
+            sock.sendto(packet, (target_ip, target_port))
+            progress_bar.update(1)
+
+    # Create progress bars for each thread
+    progress_bars = [tqdm(total=num_packets, desc=f"Thread {i+1}") for i in range(num_threads)]
+
+    # Create specified number of threads for sending UDP packets
     threads = []
-    for _ in range(num_threads):
-        thread = threading.Thread(target=send_udp_packet, args=(host, port, num_packets_per_thread))
+    for i in range(num_threads):
+        progress_bar = progress_bars[i]
+        thread = threading.Thread(target=send_packets, args=(i+1, progress_bar))
+        threads.append(thread)
+        thread.start()
+
+    # Wait for all threads to finish
+    for thread in threads:
+        thread.join()
+
+    # Close the socket
+    sock.close()
+
+    # Close progress bars
+    for bar in progress_bars:
+        bar.close()
+
+
+def ping_target(ip, num_pings, ttl, progress_bar):
+    if platform.system() == "Windows":
+        command = ["ping", "-n", str(num_pings), "-i", str(ttl), ip]
+    else:
+        command = ["ping", "-c", str(num_pings), "-i", str(ttl), ip]
+
+    print(f"Running command: {' '.join(command)}")  # Print the command being executed
+
+    for _ in range(num_pings):
+        result = subprocess.run(command)
+        print("Ping result:", result)  # Print the result of the ping command
+        progress_bar.update(1)
+
+def get_user_input():
+    ip_address = input("Enter the target IP address: ")
+    num_pings = int(input("Enter the number of pings: "))
+    num_threads = int(input("Enter the number of threads: "))
+    ttl = int(input("Enter the Time To Live (TTL) value: "))
+    return ip_address, num_pings, num_threads, ttl
+
+def ping_with_progress():
+    ip_address, num_pings, num_threads, ttl = get_user_input()
+    progress_bars = [tqdm(total=num_pings, desc=f"Thread {i+1}") for i in range(num_threads)]
+
+    threads = []
+    for i in range(num_threads):
+        progress_bar = progress_bars[i]
+        thread = threading.Thread(target=ping_target, args=(ip_address, num_pings, ttl, progress_bar))
         threads.append(thread)
         thread.start()
 
     for thread in threads:
         thread.join()
-        
-stop_threads = False
 
-def ping_target(ip, num_pings):
-    global stop_threads
-    if platform.system() == "Windows":
-        command = ["ping", "-n", str(num_pings), ip]
-    else:
-        command = ["ping", "-c", str(num_pings), ip]
+    for bar in progress_bars:
+        bar.close()
 
-    while not stop_threads:
-        subprocess.run(command)
-
-def stop_ping_threads():
-    global stop_threads
-    stop_threads = True
-
-def get_user_input_ping():
-    ip_address = input("Enter the target IP address: ")
-    num_pings = int(input("Enter the number of pings: "))
-    num_thread = int(input("Enter the number of thread: "))
-    return ip_address, num_pings, num_thread
+    print("Ping operation completed")
 
 
 def main():
