@@ -80,7 +80,7 @@ import win32api
 import winreg
 import msvcrt 
 
-
+##################################### FOLDER TOOLS #####################################
 
 
 def folder_tools():
@@ -152,7 +152,8 @@ def folder_tools():
          main()
     else:
         print("Invalid choice!")
-
+        
+        
 def delete_folders():
     clear_screen()
     print(Fore.RED + "\nDelete Folder(s) Menu:")
@@ -174,6 +175,85 @@ def delete_folders():
          folder_tools()
     else:
         print("Invalid choice!")
+
+
+
+
+def list_folder_contents(folder_path):
+    try:
+        contents = os.listdir(folder_path)
+        print("Contents of folder:")
+        for item in contents:
+            print(item)
+    except FileNotFoundError:
+        print("Folder not found!")
+
+def create_random_folder_name(max_length):
+    return str(uuid.uuid4())[:max_length]
+
+def create_many_folders(num_folders, max_name_length):
+    for _ in range(num_folders):
+        folder_name = create_random_folder_name(max_name_length)
+        try:
+            os.mkdir(folder_name)
+            print(f"{Fore.GREEN}Folder '{folder_name}' created successfully.")
+        except FileExistsError:
+            print(f"{Fore.YELLOW}Folder '{folder_name}' already exists!")
+        except Exception as e:
+            print(f"{Fore.RED}An error occurred while creating folder '{folder_name}': {e}")
+
+def create_folder(folder_name):
+    folder_names = folder_name.split(',')
+    for name in folder_names:
+        try:
+            os.mkdir(name.strip()) 
+            print(f"{Fore.GREEN}Folder '{name.strip()}' created successfully.")
+        except FileExistsError:
+            print(f"{Fore.YELLOW}Folder '{name.strip()}' already exists!")
+        except Exception as e:
+            print(f"{Fore.RED}An error occurred while creating folder '{name.strip()}': {e}")
+
+
+def delete_all_folders_in_current_path():
+    current_path = os.getcwd()
+    delete_all_folders(current_path)
+
+def delete_all_folders(folder_path):
+    try:
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+            if os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        print(f"{Fore.GREEN}All folders deleted successfully.")
+    except FileNotFoundError:
+        print(f"{Fore.YELLOW}Directory not found!")
+
+def delete_folders_by_name(folder_names):
+    names = folder_names.split(',')
+    for name in names:
+        try:
+            shutil.rmtree(name.strip())  
+            print(f"{Fore.GREEN}Folder '{name.strip()}' deleted successfully.")
+        except FileNotFoundError:
+            print(f"{Fore.YELLOW}Folder '{name.strip()}' not found!")
+        except Exception as e:
+            print(f"{Fore.RED}An error occurred while deleting folder '{name.strip()}': {e}")
+
+def show_folder_info(folder_path):
+    print(Fore.YELLOW + f"Information for folder: {folder_path}")
+    num_folders, num_files = count_folders_and_files(folder_path)
+    print(f"Number of Folders: {num_folders}")
+    print(f"Number of Files: {num_files}")
+    print(f"Largest File: {get_largest_file(folder_path)}")
+    print(f"Smallest File: {get_smallest_file(folder_path)}")
+    print(f"Last Modified: {get_last_modified(folder_path)}")
+    print(f"First Modified: {get_first_modified(folder_path)}")
+    print(f"Total Size: {get_folder_size(folder_path)} bytes")
+    
+
+
+
+##################################### FILE TOOLS #####################################
 
 
 def file_tools():
@@ -264,76 +344,6 @@ def file_operations():
     else:
         print("Invalid choice!")
 
-def list_folder_contents(folder_path):
-    try:
-        contents = os.listdir(folder_path)
-        print("Contents of folder:")
-        for item in contents:
-            print(item)
-    except FileNotFoundError:
-        print("Folder not found!")
-
-def create_random_folder_name(max_length):
-    return str(uuid.uuid4())[:max_length]
-
-def create_many_folders(num_folders, max_name_length):
-    for _ in range(num_folders):
-        folder_name = create_random_folder_name(max_name_length)
-        try:
-            os.mkdir(folder_name)
-            print(f"{Fore.GREEN}Folder '{folder_name}' created successfully.")
-        except FileExistsError:
-            print(f"{Fore.YELLOW}Folder '{folder_name}' already exists!")
-        except Exception as e:
-            print(f"{Fore.RED}An error occurred while creating folder '{folder_name}': {e}")
-
-def create_folder(folder_name):
-    folder_names = folder_name.split(',')
-    for name in folder_names:
-        try:
-            os.mkdir(name.strip()) 
-            print(f"{Fore.GREEN}Folder '{name.strip()}' created successfully.")
-        except FileExistsError:
-            print(f"{Fore.YELLOW}Folder '{name.strip()}' already exists!")
-        except Exception as e:
-            print(f"{Fore.RED}An error occurred while creating folder '{name.strip()}': {e}")
-
-
-def delete_all_folders_in_current_path():
-    current_path = os.getcwd()
-    delete_all_folders(current_path)
-
-def delete_all_folders(folder_path):
-    try:
-        for item in os.listdir(folder_path):
-            item_path = os.path.join(folder_path, item)
-            if os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-        print(f"{Fore.GREEN}All folders deleted successfully.")
-    except FileNotFoundError:
-        print(f"{Fore.YELLOW}Directory not found!")
-
-def delete_folders_by_name(folder_names):
-    names = folder_names.split(',')
-    for name in names:
-        try:
-            shutil.rmtree(name.strip())  
-            print(f"{Fore.GREEN}Folder '{name.strip()}' deleted successfully.")
-        except FileNotFoundError:
-            print(f"{Fore.YELLOW}Folder '{name.strip()}' not found!")
-        except Exception as e:
-            print(f"{Fore.RED}An error occurred while deleting folder '{name.strip()}': {e}")
-
-def show_folder_info(folder_path):
-    print(Fore.YELLOW + f"Information for folder: {folder_path}")
-    num_folders, num_files = count_folders_and_files(folder_path)
-    print(f"Number of Folders: {num_folders}")
-    print(f"Number of Files: {num_files}")
-    print(f"Largest File: {get_largest_file(folder_path)}")
-    print(f"Smallest File: {get_smallest_file(folder_path)}")
-    print(f"Last Modified: {get_last_modified(folder_path)}")
-    print(f"First Modified: {get_first_modified(folder_path)}")
-    print(f"Total Size: {get_folder_size(folder_path)} bytes")
 
 def conversion_tools():
     clear_screen()
@@ -359,200 +369,9 @@ def conversion_tools():
     else:
         print("Invalid choice!")
 
-def admin_tools():
-    clear_screen()
-    print(Fore.RED+"\nAdministrator Tools Menu:")
-    print(Fore.YELLOW +"1. Show System Users")
-    print("2. Show System Users With Passswords")
-    print("3. Add user(s)")
-    print("4. Remove user(s)")
-    print("5. Remove Keyboard(s)")
-    print("0. Back")
-
-    choice = input("Enter your choice: ")
-    if choice == '1':
-        if platform.system() == "Windows":
-            show_system_users_windows()
-        elif platform.system() == "Linux":
-            show_system_users_linux()
-        else:
-            print("Unsupported operating system")
-    elif choice == '2':
-        system_users = list_system_users()
-        if system_users:
-            print("System users:")
-            for user in system_users:
-                print(user)
-        else:
-            print("No system users found.")
-    elif choice == '3':
-         usernumber = input('Set Number of users need to Create: ')
-         if usernumber == '1':
-            add_single_user()
-         else:
-            add_multiple_users(usernumber)
-    elif choice == '4':
-            print(Fore.RED+"\nChoose Your Options:")
-            print(Fore.YELLOW +"1. Delete Special User")
-            print("2. Delete All Users")
-            choice=input('Enter your choice: ')
-            if choice=='1':
-                username=input("Enter Username To Delete: ")
-                delete_user(username)
-            elif choice=='2':
-                deleted_users = delete_all_users_except_current()
-                print("Deleted users:", deleted_users)
-            else:
-                print(Fore.RED+'Wrong Choice!!')
-    elif choice == '5':
-        layouts = list_keyboard_layouts()
-        print("List of keyboard layout IDs:")
-        for i, layout_id in enumerate(layouts):
-            print(f"{i+1}. {layout_id}")
-
-        current_layout = win32api.GetKeyboardLayout()
-        print(f"Current keyboard layout ID: {current_layout}")
-
-        choice = input("Enter the number of the layout you want to delete (0 to cancel): ")
-        if choice.isdigit():
-            choice = int(choice)
-            if 0 < choice <= len(layouts):
-                layout_id = layouts[choice - 1]
-                if layout_id == current_layout:
-                    print("Cannot delete the currently active keyboard layout.")
-                else:
-                    delete_keyboard_layout(layout_id)
-                    delete_layout_from_registry(layout_id)
-            elif choice == 0:
-                print("Operation canceled.")
-                admin_tools()
-            else:
-                print("Invalid choice.")
-        else:
-            print("Invalid input. Please enter a number.")
-    elif choice == '0':
-        main()
-    else:
-        print(Fore.RED+"Invalid choice...")
-def list_keyboard_layouts():
-    layouts = win32api.GetKeyboardLayoutList()
-    return layouts
 
 
-def delete_keyboard_layout(layout_id):
-    if layout_id < 0:
-        print("Cannot delete special keyboard layout.")
-        return
-    user32 = ctypes.windll.user32
-    user32.UnloadKeyboardLayout(layout_id)
-    print(f"Keyboard layout {layout_id} deleted successfully.")
 
-
-def delete_layout_from_registry(layout_id):
-    key_path = r"SYSTEM\CurrentControlSet\Control\Keyboard Layouts"
-    try:
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_ALL_ACCESS) as key:
-            winreg.DeleteKey(key, str(layout_id))
-            print(f"Keyboard layout '{layout_id}' deleted successfully from registry.")
-    except FileNotFoundError:
-        print(f"Keyboard layout '{layout_id}' not found in registry.")
-    except PermissionError:
-        print("Error: Permission denied. Please run the script with administrative privileges.")
-
-
-def monitor_tools():
-         clear_screen()
-         print(Fore.RED+"\nMonitoring Tools Menu:")
-         print(Fore.YELLOW +"1. Show Task Manager")
-         print("2. Show Hardware Usage")
-         print("3. Show System info")
-         print("0. Back")
-         choice=input("Enter Your Choice:")
-         if choice=='1':
-             display_processes()
-         elif choice=='2':
-             display_hardware_usage()
-         elif choice=='3':
-             display_system_info()
-         elif choice=='0':
-             main()
-         else:
-             print(Fore.RED+"Invalid choice...")
-             
-def network_tools():
-    clear_screen()
-    print(Fore.RED+"\nNetwork Tools Menu:")
-    print(Fore.YELLOW +"1. Show Network Connection")
-    print("2. Scan Open Ports")
-    print("3. Network Scaner")
-    print("4. Send Magic Packet")
-    print("5. Down Client With UDP Packet")
-    print("6. Down Client With TCP Packet ")
-    print("7. FireWall Status")
-    print("0. Back")
-    choice=input("Enter Your Choice:")
-    if choice=='1':
-        Network_connections()
-    elif choice=='2':
-        scan_open_ports()
-    elif choice=='3':
-        subnet, ip_range = get_user_input()
-        scan_network(ip_range, subnet)
-        print("\nScanning Complete!")
-    elif choice=='5':
-            target_ip = input("Enter target IP address: ")
-            target_port = int(input("Enter target port number: "))
-            message = input("Enter message to send: ")
-            num_packets = int(input("Enter number of packets to send: "))
-            num_threads = int(input("Enter number of threads: "))
-            send_udp_packets(target_ip, target_port, message, num_packets, num_threads)
-    elif choice=='4':
-        mac_address, broadcast_address = get_user_input_magic_packet()
-        send_magic_packet(mac_address, broadcast_address)
-        print("Magic packet sent successfully!")
-    elif choice=='6':
-        ping_with_progress()
-    elif choice=='7':
-        fire_walls()
-    elif choice=='0':
-        main()
-    else:
-        print(Fore.RED+"Invalid choice...")
-
-def scan_open_ports():
-    clear_screen()
-    print(Fore.RED+"\nScan Port Tools Menu:")
-    print(Fore.YELLOW +"1. Scan On Current Machine")
-    print("2. Scan On Special IP")
-    print("0. Back")
-    choice=input("Enter Your Choice:")
-    if choice=='1':
-        display_open_ports()
-    elif choice=='2':
-        ip_address, port_range = get_user_input_port_scan()
-        open_ports = get_open_ports(ip_address, port_range)
-        print("Open ports:", open_ports)
-    elif choice=='0':
-        main()
-    else:
-        print(Fore.RED+"Invalid choice...")
-        
-def fire_walls():
-    clear_screen()
-    print(Fore.RED+"\nFireWall Menu:") 
-    print(Fore.WHITE +"1. Firewall Status")
-    print("2. Disable Firewall")
-    print("3. Enable Firewall")
-    print("0. Back")  
-    choice=input("Enter Your Choice: ")
-    if choice=='1':
-        print(status_firewall())
-    elif choice=='2':
-        print(disable_firewall())
-    elif choice=='3':
-        print(enable_firewall())
-    else:
-        print(Fore.RED+"Invalid choice...")
         
 def count_folders_and_files(folder_path):
     num_folders = 0
@@ -983,6 +802,94 @@ def convert_video(input_path, output_path, output_format, bitrate=None):
     except Exception as e:
         print("An error occurred during video conversion:", e)
 
+
+##################################### ADMIN TOOLS #####################################
+
+
+
+
+def admin_tools():
+    clear_screen()
+    print(Fore.RED+"\nAdministrator Tools Menu:")
+    print(Fore.YELLOW +"1. Show System Users")
+    print("2. Show System Users With Passswords")
+    print("3. Add user(s)")
+    print("4. Remove user(s)")
+    print("5. Remove Keyboard(s)")
+    print("6. Driver Status")
+    print("0. Back")
+
+    choice = input("Enter your choice: ")
+    if choice == '1':
+        if platform.system() == "Windows":
+            show_system_users_windows()
+        elif platform.system() == "Linux":
+            show_system_users_linux()
+        else:
+            print("Unsupported operating system")
+    elif choice == '2':
+        system_users = list_system_users()
+        if system_users:
+            print("System users:")
+            for user in system_users:
+                print(user)
+        else:
+            print("No system users found.")
+    elif choice == '3':
+         usernumber = input('Set Number of users need to Create: ')
+         if usernumber == '1':
+            add_single_user()
+         else:
+            add_multiple_users(usernumber)
+    elif choice == '4':
+            print(Fore.RED+"\nChoose Your Options:")
+            print(Fore.YELLOW +"1. Delete Special User")
+            print("2. Delete All Users")
+            choice=input('Enter your choice: ')
+            if choice=='1':
+                username=input("Enter Username To Delete: ")
+                delete_user(username)
+            elif choice=='2':
+                deleted_users = delete_all_users_except_current()
+                print("Deleted users:", deleted_users)
+            else:
+                print(Fore.RED+'Wrong Choice!!')
+    elif choice == '5':
+        layouts = list_keyboard_layouts()
+        print("List of keyboard layout IDs:")
+        for i, layout_id in enumerate(layouts):
+            print(f"{i+1}. {layout_id}")
+
+        current_layout = win32api.GetKeyboardLayout()
+        print(f"Current keyboard layout ID: {current_layout}")
+
+        choice = input("Enter the number of the layout you want to delete (0 to cancel): ")
+        if choice.isdigit():
+            choice = int(choice)
+            if 0 < choice <= len(layouts):
+                layout_id = layouts[choice - 1]
+                if layout_id == current_layout:
+                    print("Cannot delete the currently active keyboard layout.")
+                else:
+                    delete_keyboard_layout(layout_id)
+                    delete_layout_from_registry(layout_id)
+            elif choice == 0:
+                print("Operation canceled.")
+                admin_tools()
+            else:
+                print("Invalid choice.")
+        else:
+            print("Invalid input. Please enter a number.")
+    elif choice == '6':
+            print(show_not_installed_drivers())
+    elif choice == '0':
+        main()
+    else:
+        print(Fore.RED+"Invalid choice...")
+
+
+
+
 def show_system_users_windows():
     os.system("net user")
 
@@ -1012,6 +919,35 @@ def list_system_users():
         print("Unsupported platform.")
     return users
 
+def get_user_list():
+    if platform.system() == "Windows":
+        output = os.popen("net user").read()
+        users = [line.split()[0] for line in output.splitlines()[4:] if line.strip()]
+    elif platform.system() == "Linux":
+        output = os.popen("cut -d: -f1 /etc/passwd").read()
+        users = output.splitlines()
+    else:
+        print("Unsupported operating system.")
+        users = []
+    return users
+
+
+        
+def get_current_username():
+    return getpass.getuser()
+
+def delete_all_users_except_current():
+    current_user = get_current_username()
+    users = get_user_list()
+    if users is None:
+        print("Error: Unable to retrieve user list.")
+        return
+    deleted_users = []
+    for user in users:
+        if user != current_user:
+            delete_user(user)
+            deleted_users.append(user)
+    return deleted_users
     
         
 def add_single_user():
@@ -1102,39 +1038,62 @@ def delete_user(username):
         print(f"Error deleting user '{username}': {e}")
 
 
+def list_keyboard_layouts():
+    layouts = win32api.GetKeyboardLayoutList()
+    return layouts
 
 
-
-def get_user_list():
-    if platform.system() == "Windows":
-        output = os.popen("net user").read()
-        users = [line.split()[0] for line in output.splitlines()[4:] if line.strip()]
-    elif platform.system() == "Linux":
-        output = os.popen("cut -d: -f1 /etc/passwd").read()
-        users = output.splitlines()
-    else:
-        print("Unsupported operating system.")
-        users = []
-    return users
-
-
-        
-def get_current_username():
-    return getpass.getuser()
-
-def delete_all_users_except_current():
-    current_user = get_current_username()
-    users = get_user_list()
-    if users is None:
-        print("Error: Unable to retrieve user list.")
+def delete_keyboard_layout(layout_id):
+    if layout_id < 0:
+        print("Cannot delete special keyboard layout.")
         return
-    deleted_users = []
-    for user in users:
-        if user != current_user:
-            delete_user(user)
-            deleted_users.append(user)
-    return deleted_users
+    user32 = ctypes.windll.user32
+    user32.UnloadKeyboardLayout(layout_id)
+    print(f"Keyboard layout {layout_id} deleted successfully.")
 
+
+def delete_layout_from_registry(layout_id):
+    key_path = r"SYSTEM\CurrentControlSet\Control\Keyboard Layouts"
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_ALL_ACCESS) as key:
+            winreg.DeleteKey(key, str(layout_id))
+            print(f"Keyboard layout '{layout_id}' deleted successfully from registry.")
+    except FileNotFoundError:
+        print(f"Keyboard layout '{layout_id}' not found in registry.")
+    except PermissionError:
+        print("Error: Permission denied. Please run the script with administrative privileges.")
+
+
+
+
+
+
+
+
+##################################### MONITOR TOOLS #####################################
+
+
+
+
+def monitor_tools():
+         clear_screen()
+         print(Fore.RED+"\nMonitoring Tools Menu:")
+         print(Fore.YELLOW +"1. Show Task Manager")
+         print("2. Show Hardware Usage")
+         print("3. Show System info")
+         print("0. Back")
+         choice=input("Enter Your Choice:")
+         if choice=='1':
+             display_processes()
+         elif choice=='2':
+             display_hardware_usage()
+         elif choice=='3':
+             display_system_info()
+         elif choice=='0':
+             main()
+         else:
+             print(Fore.RED+"Invalid choice...")
+             
 def display_processes():
     clear_screen()
     if platform.system() == 'Windows':
@@ -1200,6 +1159,90 @@ def display_system_info():
         for addr in addrs:
             print(f"      {addr.family.name}: {addr.address}")
             
+
+               
+             
+             
+##################################### NETWORK TOOLS #####################################
+
+
+
+def network_tools():
+    clear_screen()
+    print(Fore.RED+"\nNetwork Tools Menu:")
+    print(Fore.YELLOW +"1. Show Network Connection")
+    print("2. Scan Open Ports")
+    print("3. Network Scaner")
+    print("4. Send Magic Packet")
+    print("5. Down Client With UDP Packet")
+    print("6. Down Client With TCP Packet ")
+    print("7. FireWall Status")
+    print("0. Back")
+    choice=input("Enter Your Choice:")
+    if choice=='1':
+        Network_connections()
+    elif choice=='2':
+        scan_open_ports()
+    elif choice=='3':
+        subnet, ip_range = get_user_input()
+        scan_network(ip_range, subnet)
+        print("\nScanning Complete!")
+    elif choice=='5':
+            target_ip = input("Enter target IP address: ")
+            target_port = int(input("Enter target port number: "))
+            message = input("Enter message to send: ")
+            num_packets = int(input("Enter number of packets to send: "))
+            num_threads = int(input("Enter number of threads: "))
+            send_udp_packets(target_ip, target_port, message, num_packets, num_threads)
+    elif choice=='4':
+        mac_address, broadcast_address = get_user_input_magic_packet()
+        send_magic_packet(mac_address, broadcast_address)
+        print("Magic packet sent successfully!")
+    elif choice=='6':
+        ping_with_progress()
+    elif choice=='7':
+        fire_walls()
+    elif choice=='0':
+        main()
+    else:
+        print(Fore.RED+"Invalid choice...")
+
+def scan_open_ports():
+    clear_screen()
+    print(Fore.RED+"\nScan Port Tools Menu:")
+    print(Fore.YELLOW +"1. Scan On Current Machine")
+    print("2. Scan On Special IP")
+    print("0. Back")
+    choice=input("Enter Your Choice:")
+    if choice=='1':
+        display_open_ports()
+    elif choice=='2':
+        ip_address, port_range = get_user_input_port_scan()
+        open_ports = get_open_ports(ip_address, port_range)
+        print("Open ports:", open_ports)
+    elif choice=='0':
+        main()
+    else:
+        print(Fore.RED+"Invalid choice...")
+        
+def fire_walls():
+    clear_screen()
+    print(Fore.RED+"\nFireWall Menu:") 
+    print(Fore.WHITE +"1. Firewall Status")
+    print("2. Disable Firewall")
+    print("3. Enable Firewall")
+    print("0. Back")  
+    choice=input("Enter Your Choice: ")
+    if choice=='1':
+        print(status_firewall())
+    elif choice=='2':
+        print(disable_firewall())
+    elif choice=='3':
+        print(enable_firewall())
+    else:
+        print(Fore.RED+"Invalid choice...")
+        
+        
 def Network_connections():
     print("\n  Network Connections:")
     for conn in psutil.net_connections(kind='inet'):
@@ -1430,6 +1473,14 @@ def disable_firewall():
     else:
         return "Unsupported operating system."
     
+           
+        
+        
+
+
+    
+ ##################################### MAIN  #####################################
+   
 
 def clear_screen():
     if platform.system() == "Windows":
