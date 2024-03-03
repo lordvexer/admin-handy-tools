@@ -79,6 +79,9 @@ import ctypes
 import win32api
 import winreg
 import msvcrt 
+import speedtest
+import iperf3
+
 
 ##################################### FOLDER TOOLS #####################################
 
@@ -1250,6 +1253,7 @@ def network_tools():
     print("5. Down Client With UDP Packet")
     print("6. Down Client With TCP Packet ")
     print("7. FireWall Status")
+    print("8. Speed Test")
     print("0. Back")
     choice=input("Enter Your Choice:")
     if choice=='1':
@@ -1275,6 +1279,8 @@ def network_tools():
         ping_with_progress()
     elif choice=='7':
         fire_walls()
+    elif choice=='8':
+        run_speed_test_menu()
     elif choice=='0':
         main()
     else:
@@ -1312,6 +1318,26 @@ def fire_walls():
         print(disable_firewall())
     elif choice=='3':
         print(enable_firewall())
+    else:
+        print(Fore.RED+"Invalid choice...")
+
+def run_speed_test_menu():
+    clear_screen()
+    print(Fore.RED+"\nSpeed Test Menu:") 
+    print(Fore.WHITE +"1. Internet Speed")
+    print("2. Special Distanation Speed")
+    print("3. Local Server Connection")
+    print("0. Back")  
+    choice=input("Enter Your Choice: ")
+    if choice=='1':
+        run_speed_test()
+    elif choice=='2':
+        server_ip = input("Enter Your Destination IP: ")
+        run_network_speed_test(server_ip)
+    elif choice=='3':
+        run_traceroute("172.16.20.34")
+    elif choice=='0':
+        network_tools()
     else:
         print(Fore.RED+"Invalid choice...")
         
@@ -1547,11 +1573,48 @@ def disable_firewall():
         return "Unsupported operating system."
     
            
-        
-        
-
-
+def run_speed_test():
+    st = speedtest.Speedtest()
     
+    print("Running download speed test...")
+    download_speed = st.download() / 1_000_000  # Convert to Mbps
+    print("Download speed: {:.2f} Mbps".format(download_speed))
+    
+    print("Running upload speed test...")
+    upload_speed = st.upload() / 1_000_000  # Convert to Mbps
+    print("Upload speed: {:.2f} Mbps".format(upload_speed))  
+        
+        
+        
+def run_network_speed_test(server_ip):
+    client = iperf3.Client()
+    client.duration = 10  # Duration of the test in seconds
+    client.server_hostname = server_ip
+    
+    print("Running network speed test to", server_ip)
+    result = client.run()
+    
+    if result.error:
+        print("Error:", result.error)
+    else:
+        print("Download speed: {:.2f} Mbps".format(result.sent_Mbps))
+        print("Upload speed: {:.2f} Mbps".format(result.received_Mbps))
+
+
+def run_traceroute(destination):
+    if platform.system() == 'Windows':
+        # Use tracert on Windows
+        command = ['tracert', '-d', destination]
+    else:
+        # Use traceroute on Unix-based systems
+        command = ['traceroute', '-n', destination]
+    
+    result = subprocess.run(command, capture_output=True, text=True)
+    
+    if result.returncode == 0:
+        print(result.stdout)
+    else:
+        print("Error:", result.stderr)  
  ##################################### MAIN  #####################################
    
 
