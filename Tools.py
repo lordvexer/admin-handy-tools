@@ -1247,14 +1247,16 @@ def network_tools():
     clear_screen()
     print(Fore.RED+"\nNetwork Tools Menu:")
     print(Fore.YELLOW +"1. Show Network Connection")
-    print("2. Scan Open Ports")
-    print("3. Network Scaner")
-    print("4. Send Magic Packet")
-    print("5. Down Client With UDP Packet")
-    print("6. Down Client With TCP Packet ")
-    print("7. FireWall Status")
-    print("8. Speed Test")
-    print("0. Back")
+    print("2.  Scan Open Ports")
+    print("3.  Network Scaner")
+    print("4.  Send Magic Packet")
+    print("5.  Down Client With UDP Packet")
+    print("6.  Down Client With TCP Packet ")
+    print("7.  FireWall Status")
+    print("8.  Speed Test")
+    print("9.  Find Computer Name With IP")
+    print("10. Next Page")
+    print("0.  Back")
     choice=input("Enter Your Choice:")
     if choice=='1':
         Network_connections()
@@ -1281,11 +1283,20 @@ def network_tools():
         fire_walls()
     elif choice=='8':
         run_speed_test_menu()
+    elif choice=='9':
+        ip_address = input("Enter IP Address:")
+        computer_name = get_hostname(ip_address)
+        print("Computer name for IP", Fore.RED + ip_address, "is:", Fore.GREEN + computer_name)
+    elif choice=='10':
+        network_tools()
     elif choice=='0':
         main()
     else:
         print(Fore.RED+"Invalid choice...")
 
+
+        
+        
 def scan_open_ports():
     clear_screen()
     print(Fore.RED+"\nScan Port Tools Menu:")
@@ -1615,6 +1626,13 @@ def run_traceroute(destination):
         print(result.stdout)
     else:
         print("Error:", result.stderr)  
+        
+def get_hostname(ip_address):
+    try:
+        hostname, _, _ = socket.gethostbyaddr(ip_address)
+        return hostname
+    except socket.herror:
+        return "Unknown"
  ##################################### MAIN  #####################################
    
 
@@ -1629,6 +1647,13 @@ def clear_screen():
 def main():
     clear_screen()
     while True:
+        print(Fore.GREEN+"db   db  .d8b.  d8b   db d8888b. db    db      d888888b  .d88b.   .d88b.  db      .d8888. ")
+        print(Fore.GREEN+"88   88 d8' `8b 888o  88 88  `8D `8b  d8'      `~~88~~' .8P  Y8. .8P  Y8. 88      88'  YP ")
+        print(Fore.GREEN+"88ooo88 88ooo88 88V8o 88 88   88  `8bd8'          88    88    88 88    88 88      `8bo.   ")
+        print(Fore.GREEN+"88~~~88 88~~~88 88 V8o88 88   88    88            88    88    88 88    88 88        `Y8b. ")
+        print(Fore.GREEN+"88   88 88   88 88  V888 88  .8D    88            88    `8b  d8' `8b  d8' 88booo. db   8D ")
+        print(Fore.GREEN+"YP   YP YP   YP VP   V8P Y8888D'    YP            YP     `Y88P'   `Y88P'  Y88888P `8888Y' ")
+        # print(Fore.RED+"By HamidReza")
         print(Style.RESET_ALL + Fore.RED + "\nMain Menu:")
         print(Fore.WHITE + "1. Folder Tools")
         print("2. File Tools")
