@@ -817,6 +817,7 @@ def admin_tools():
     print("4. Remove user(s)")
     print("5. Remove Keyboard(s)")
     print("6. Driver Status")
+    print("7. Run App On Remote")
     print("0. Back")
 
     choice = input("Enter your choice: ")
@@ -882,12 +883,38 @@ def admin_tools():
             print("Invalid input. Please enter a number.")
     elif choice == '6':
             print(show_not_installed_drivers())
+    elif choice == '7':
+            remote_pc_ip=input("Enter Target Ip Address:")
+            app_path=app_selection()
+            run_app_on_remote_pc(remote_pc_ip, app_path)
     elif choice == '0':
         main()
     else:
         print(Fore.RED+"Invalid choice...")
 
+def app_selection():
+    print(Fore.RED + "Select Your APP To Open On Target:")
+    print(Fore.RESET + "1. Rust Desk")
+    print("2. ....")
+    print("3. Custom Path")
+    clear_screen()
+    
+    rust_path = r"C:\Program Files\RustDesk\rustdesk.exe"  # Path to Rust Desk application
+    print("What app You need to Open On Target?")
+    print("1. RustDesk")
+    print("3. Custom app Path")
+    choice = input("Enter Your Choice: ")
+    if choice == "1":
+        return rust_path
+    # Add other options here if needed
+    elif choice == "3":
+        custom_path = input("Enter the custom path Of application: ")
+        return custom_path
+    else:
+        print("Invalid choice. Please try again.")
+        return None
 
+    
 
 
 def show_system_users_windows():
@@ -1064,11 +1091,57 @@ def delete_layout_from_registry(layout_id):
         print("Error: Permission denied. Please run the script with administrative privileges.")
 
 
+def show_not_installed_drivers():
+    system = platform.system()
+    if system == "Windows":
+        try:
+            installed_drivers_output = subprocess.check_output(['pnputil', '-e']).decode('utf-8')
+            installed_drivers = [line.strip() for line in installed_drivers_output.split('\n') if line.strip()]
+            known_drivers = ["Driver1", "Driver2", "Driver3"]  # Add your list of known drivers here
+            not_installed_drivers = [driver for driver in known_drivers if driver not in installed_drivers]
+            
+            if not_installed_drivers:
+                output = subprocess.check_output(['wmic', 'path', 'win32_pnpentity', 'get', 'caption']).decode('utf-8')
+                device_names = [line.strip() for line in output.split('\n') if line.strip()]
+                return [name for name in device_names if any(driver in name for driver in not_installed_drivers)]
+            else:
+                return "All drivers are installed."
+        except subprocess.CalledProcessError as e:
+            return f"Error: {e}"
+    elif system == "Linux":
+        try:
+            installed_drivers_output = subprocess.check_output(['lsmod']).decode('utf-8')
+            installed_drivers = [line.split()[0] for line in installed_drivers_output.split('\n')[1:] if line.strip()]
+            known_drivers = ["Driver1", "Driver2", "Driver3"]  # Add your list of known drivers here
+            not_installed_drivers = [driver for driver in known_drivers if driver not in installed_drivers]
+            
+            if not_installed_drivers:
+                output = subprocess.check_output(['lsusb']).decode('utf-8')
+                device_names = [line.split(':')[1].strip() for line in output.split('\n') if line.strip()]
+                return [name for name in device_names if any(driver in name for driver in not_installed_drivers)]
+            else:
+                return "All drivers are installed."
+        except subprocess.CalledProcessError as e:
+            return f"Error: {e}"
+    else:
+        return "Unsupported operating system."
 
-
-
-
-
+def run_app_on_remote_pc(remote_pc_ip, app_path):
+    system = platform.system()
+    if system == "Windows":
+        try:
+            subprocess.run(['powershell', '-Command', f'Invoke-Command -ComputerName {remote_pc_ip} -ScriptBlock {{ Start-Process -FilePath "{app_path}" }}'], check=True)
+            return "Application started successfully on the remote PC."
+        except subprocess.CalledProcessError as e:
+            return f"Error: {e}"
+    elif system == "Linux":
+        try:
+            subprocess.run(['ssh', f'user@{remote_pc_ip}', f'nohup {app_path} &'], check=True)
+            return "Application started successfully on the remote PC."
+        except subprocess.CalledProcessError as e:
+            return f"Error: {e}"
+    else:
+        return "Unsupported operating system."
 
 ##################################### MONITOR TOOLS #####################################
 
@@ -1518,34 +1591,79 @@ def main():
             break
         else:
             print("Invalid choice!")
-def login(username, password):
-    # Define your list of username-password pairs
-    user_credentials = {
-        "a": "a",
-        "user2": "password2",
-        "user3": "password3"
-    }
-    
-    # Check if the provided username exists in the dictionary
-    if username in user_credentials:
-        # Verify if the provided password matches the stored password
-        if user_credentials[username] == password:
-            print("Login successful!")
-            main()
-            return True
-        else:
-            print("Incorrect password. Please try again.")
+
+
+
+
+def ldap_login(username, password):
+    # Modify the LDAP server details accordingly
+    ldap_server = Server('ldap://dc-1.tvedc.local:389', get_info=ALL)
+    # Replace the base_dn with your LDAP base DN
+    base_dn = 'OU=Tvedc.local,DC=tvedc,DC=local'
+    # Replace the search_filter with your LDAP search filter
+    search_filter = '(sAMAccountName={})'.format(username)
+
+    try:
+        # Attempt to bind to the LDAP server
+        conn = Connection(ldap_server, user='{}@tvedc.local'.format(username), password=password, authentication=SIMPLE)
+        if not conn.bind():
+            print(Fore.RED + "LDAP login failed: Invalid credentials")
             return False
-    else:
-        print("User not found. Please try again.")
+
+        # Search for the user in LDAP
+        conn.search(search_base=base_dn, search_filter=search_filter, attributes=['cn'])
+        if not conn.entries:
+            print(Fore.RED + "LDAP login failed: User not found")
+            return False
+
+        print(Fore.GREEN + "LDAP login successful!")
+        return True
+
+    except Exception as e:
+        print(Fore.RED + "An error occurred during LDAP authentication:", e)
         return False
 
-# Example usage
+def clear_screen():
+    if platform.system() == "Windows":
+        import os
+        os.system("cls")
+    else:
+        import subprocess
+        subprocess.call("clear", shell=True)
+
+def get_password(prompt='Enter your password: '):
+    if platform.system() == 'Windows':
+        password = ''
+        print(prompt, end='', flush=True)
+        while True:
+            char = msvcrt.getch()
+            if char == b'\r':
+                print()
+                break
+            elif char == b'\x08':  # Backspace
+                if password:
+                    password = password[:-1]
+                    print('\b \b', end='', flush=True)
+            else:
+                password += char.decode('utf-8')
+                print('*', end='', flush=True)
+    else:
+        password = getpass.getpass(prompt)
+    return password
+
+
+
 if __name__ == "__main__":
     clear_screen()
-    # Prompt the user for username and password
-    input_username = input("Enter your username: ")
-    input_password = input("Enter your password: ")
+    init(autoreset=True)  # Initialize colorama
+
+    master_username = 'a'
+    master_password = 'a'
     
-    # Attempt to login with provided credentials
-    login(input_username, input_password)
+    input_username = input("Enter your username: ")
+    input_password = get_password()
+
+    if input_username == master_username and input_password == master_password:
+        main()
+    elif ldap_login(input_username, input_password):
+        main()
