@@ -54,6 +54,7 @@ except ImportError:
     from cryptography.fernet import Fernet
 
 # Import other necessary modules
+import getpass
 import shutil
 import hashlib
 import traceback
@@ -77,7 +78,7 @@ import subprocess
 import ctypes
 import win32api
 import winreg
-
+import msvcrt 
 
 
 
@@ -1371,7 +1372,7 @@ def main():
         elif choice == '4':
             monitor_tools()
         elif choice == '5':
-            network_Tools()
+            network_tools()
         elif choice == '0':
             print(Fore.GREEN + "Exiting the program. Goodbye!")
             print(Style.RESET_ALL)
@@ -1379,38 +1380,68 @@ def main():
         else:
             print("Invalid choice!")
 
-def login(username, password):
-    user_credentials = {
-        "admin": "admin",
-        "user2": "password2",
-        "user3": "password3"
-    }
-    
-    if username in user_credentials:
-        if user_credentials[username] == password:
-            print("Login successful!")
-            return True
-        else:
-            print(Fore.RED + "Incorrect password. Goodbye")
+def ldap_login(username, password):
+    # Modify the LDAP server details accordingly
+    ldap_server = Server('ldap://dc-1.tvedc.local:389', get_info=ALL)
+    # Replace the base_dn with your LDAP base DN
+    base_dn = 'OU=Tvedc.local,DC=tvedc,DC=local'
+    # Replace the search_filter with your LDAP search filter
+    search_filter = '(sAMAccountName={})'.format(username)
+
+    try:
+        # Attempt to bind to the LDAP server
+        conn = Connection(ldap_server, user='{}@tvedc.local'.format(username), password=password, authentication=SIMPLE)
+        if not conn.bind():
+            print(Fore.RED + "Login failed: Invalid credentials")
             return False
-    else:
-        print("User not found. Please try again.")
+
+        # Search for the user in LDAP
+        conn.search(search_base=base_dn, search_filter=search_filter, attributes=['cn'])
+        if not conn.entries:
+            print(Fore.RED + "Login failed: User not found")
+            return False
+
+        print(Fore.GREEN + "Login successful!")
+        return True
+
+    except Exception as e:
+        print(Fore.RED + "An error occurred during LDAP authentication:", e)
         return False
 
 def clear_screen():
     if platform.system() == "Windows":
+        import os
         os.system("cls")
     else:
-        os.system("clear")
+        import subprocess
+        subprocess.call("clear", shell=True)
+
+def get_password(prompt='Enter your password: '):
+    if platform.system() == 'Windows':
+        password = ''
+        print(prompt, end='', flush=True)
+        while True:
+            char = msvcrt.getch()
+            if char == b'\r':
+                print()
+                break
+            elif char == b'\x08':  # Backspace
+                if password:
+                    password = password[:-1]
+                    print('\b \b', end='', flush=True)
+            else:
+                password += char.decode('utf-8')
+                print('*', end='', flush=True)
+    else:
+        password = getpass.getpass(prompt)
+    return password
 
 if __name__ == "__main__":
-    if platform.system() == "Windows":
-        os.system("cls")
-    else:
-        os.system("clear")
-    
+    clear_screen()
     init(autoreset=True)  # Initialize colorama
+
     input_username = input("Enter your username: ")
-    input_password = input("Enter your password: ")
-    if login(input_username, input_password):
+    input_password = get_password()
+
+    if ldap_login(input_username, input_password):
         main()
