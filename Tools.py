@@ -1,5 +1,6 @@
 import os
 import platform
+from ldap3 import Server, Connection, SIMPLE, SYNC, ALL
 
 # Check if colorama package is installed
 try:
@@ -82,7 +83,7 @@ import winreg
 
 
 def folder_tools():
-    Clear_Screen()
+    clear_screen()
     print(Fore.RED + "\nFolder Tools Menu:")
     print(Fore.YELLOW + "1. List contents of a folder")
     print("2. Create a new folder")
@@ -152,7 +153,7 @@ def folder_tools():
         print("Invalid choice!")
 
 def delete_folders():
-    Clear_Screen()
+    clear_screen()
     print(Fore.RED + "\nDelete Folder(s) Menu:")
     print(Fore.YELLOW + "1. Delete all folders in the current path")
     print("2. Delete all folders in a directory")
@@ -175,7 +176,7 @@ def delete_folders():
 
 
 def file_tools():
-    Clear_Screen()
+    clear_screen()
     print(Fore.RED + "\nFile Tools Menu:")
     print(Fore.YELLOW + "1. File Information")
     print("2. File Operations")
@@ -232,7 +233,7 @@ def file_tools():
         print("Invalid choice!")
 
 def file_operations():
-    Clear_Screen()
+    clear_screen()
     print(Fore.RED+"\nFile Operations Menu:")
     print(Fore.YELLOW +"1. Copy File")
     print("2. Move File")
@@ -334,7 +335,7 @@ def show_folder_info(folder_path):
     print(f"Total Size: {get_folder_size(folder_path)} bytes")
 
 def conversion_tools():
-    Clear_Screen()
+    clear_screen()
     print(Fore.RED+"\nOptions:")
     print(Fore.YELLOW +"1. Convert Photo")
     print("2. Convert Video")
@@ -358,7 +359,7 @@ def conversion_tools():
         print("Invalid choice!")
 
 def admin_tools():
-    Clear_Screen()
+    clear_screen()
     print(Fore.RED+"\nAdministrator Tools Menu:")
     print(Fore.YELLOW +"1. Show System Users")
     print("2. Show System Users With Passswords")
@@ -458,8 +459,8 @@ def delete_layout_from_registry(layout_id):
         print("Error: Permission denied. Please run the script with administrative privileges.")
 
 
-def Monitor_tools():
-         Clear_Screen()
+def monitor_tools():
+         clear_screen()
          print(Fore.RED+"\nMonitoring Tools Menu:")
          print(Fore.YELLOW +"1. Show Task Manager")
          print("2. Show Hardware Usage")
@@ -477,8 +478,8 @@ def Monitor_tools():
          else:
              print(Fore.RED+"Invalid choice...")
              
-def Network_Tools():
-    Clear_Screen()
+def network_Tools():
+    clear_screen()
     print(Fore.RED+"\nNetwork Tools Menu:")
     print(Fore.YELLOW +"1. Show Network Connection")
     print("2. Scan Open Ports")
@@ -512,7 +513,7 @@ def Network_Tools():
     
 
 def scan_open_ports():
-    Clear_Screen()
+    clear_screen()
     print(Fore.RED+"\nScan Port Tools Menu:")
     print(Fore.YELLOW +"1. Scan On Current Machine")
     print("2. Scan On Special IP")
@@ -683,7 +684,7 @@ def view_file_details(file_path):
         print(f"An error occurred: {e}")
 
 def compare_folders():
-    Clear_Screen()
+    clear_screen()
     folder1_path = input("Enter the path of the first folder: ")
     folder2_path = input("Enter the path of the second folder: ")
 
@@ -1111,7 +1112,7 @@ def delete_all_users_except_current():
     return deleted_users
 
 def display_processes():
-    Clear_Screen()
+    clear_screen()
     if platform.system() == 'Windows':
         subprocess.call('tasklist', shell=True)
     elif platform.system() == 'Linux':
@@ -1120,7 +1121,7 @@ def display_processes():
         print("Unsupported operating system")
         
 def display_hardware_usage():
-    Clear_Screen()
+    clear_screen()
     print("CPU Usage: {}%".format(psutil.cpu_percent(interval=1)))
     print("Memory Usage: {}%".format(psutil.virtual_memory().percent))
 
@@ -1142,7 +1143,7 @@ def display_hardware_usage():
               f"Free: {disk_usage.free / (1024 ** 3):.2f} GB")
         
 def display_system_info():
-    Clear_Screen()
+    clear_screen()
     print("System Information:")
     print(f"Operating System: {platform.system()} {platform.release()} {platform.version()}")
     print(f"Machine: {platform.machine()}")
@@ -1191,7 +1192,7 @@ def display_progress_bar(percent):
     print(f"Scanning : [{bar}] {int(percent * 100)}%", end='\r')
 
 def display_open_ports():
-    Clear_Screen()
+    clear_screen()
     print(Fore.RED+"Open Ports:")
     for port in get_open_ports():
         print(f"    Port {port}")
@@ -1370,7 +1371,7 @@ def main():
         elif choice == '4':
             monitor_tools()
         elif choice == '5':
-            network_tools()
+            network_Tools()
         elif choice == '0':
             print(Fore.GREEN + "Exiting the program. Goodbye!")
             print(Style.RESET_ALL)
