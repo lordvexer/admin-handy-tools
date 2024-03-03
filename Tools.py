@@ -479,7 +479,7 @@ def monitor_tools():
          else:
              print(Fore.RED+"Invalid choice...")
              
-def network_Tools():
+def network_tools():
     clear_screen()
     print(Fore.RED+"\nNetwork Tools Menu:")
     print(Fore.YELLOW +"1. Show Network Connection")
@@ -488,6 +488,7 @@ def network_Tools():
     print("4. Send Magic Packet")
     print("5. Down Client With UDP Packet")
     print("6. Down Client With TCP Packet ")
+    print("7. FireWall Status")
     print("0. Back")
     choice=input("Enter Your Choice:")
     if choice=='1':
@@ -511,7 +512,12 @@ def network_Tools():
         print("Magic packet sent successfully!")
     elif choice=='6':
         ping_with_progress()
-    
+    elif choice=='7':
+        fire_walls()
+    elif choice=='0':
+        main()
+    else:
+        print(Fore.RED+"Invalid choice...")
 
 def scan_open_ports():
     clear_screen()
@@ -528,6 +534,23 @@ def scan_open_ports():
         print("Open ports:", open_ports)
     elif choice=='0':
         main()
+    else:
+        print(Fore.RED+"Invalid choice...")
+        
+def fire_walls():
+    clear_screen()
+    print(Fore.RED+"\nFireWall Menu:") 
+    print(Fore.WHITE +"1. Firewall Status")
+    print("2. Disable Firewall")
+    print("3. Enable Firewall")
+    print("0. Back")  
+    choice=input("Enter Your Choice: ")
+    if choice=='1':
+        print(status_firewall())
+    elif choice=='2':
+        print(disable_firewall())
+    elif choice=='3':
+        print(enable_firewall())
     else:
         print(Fore.RED+"Invalid choice...")
         
@@ -1349,8 +1372,73 @@ def ping_with_progress():
         bar.close()
 
     print("Ping operation completed")
+    
 
 
+def status_firewall():
+        system = platform.system()
+        if system == "Windows":
+            try:
+                output = subprocess.check_output(['netsh', 'advfirewall', 'show', 'allprofiles', 'state'])
+                output = output.decode('utf-8')
+                return output
+            except subprocess.CalledProcessError as e:
+                return f"Error: {e}"
+        elif system == "Linux":
+            try:
+                output = subprocess.check_output(['ufw', 'status'])
+                output = output.decode('utf-8')
+                return output
+            except subprocess.CalledProcessError as e:
+                return f"Error: {e}"
+        else:
+            return "Unsupported operating system"
+
+
+def enable_firewall():
+    system = platform.system()
+    if system == "Windows":
+        try:
+            subprocess.run(['netsh', 'advfirewall', 'set', 'allprofiles', 'state', 'on'], check=True)
+            return "Firewall enabled successfully on Windows."
+        except subprocess.CalledProcessError as e:
+            return f"Error: {e}"
+    elif system == "Linux":
+        try:
+            subprocess.run(['ufw', 'enable'], check=True)
+            return "Firewall enabled successfully on Linux."
+        except subprocess.CalledProcessError as e:
+            return f"Error: {e}"
+    else:
+        return "Unsupported operating system."
+
+
+def disable_firewall():
+    system = platform.system()
+    if system == "Windows":
+        try:
+            subprocess.run(['netsh', 'advfirewall', 'set', 'allprofiles', 'state', 'off'], check=True)
+            return "Firewall disabled successfully on Windows."
+        except subprocess.CalledProcessError as e:
+            return f"Error: {e}"
+    elif system == "Linux":
+        try:
+            subprocess.run(['ufw', 'disable'], check=True)
+            return "Firewall disabled successfully on Linux."
+        except subprocess.CalledProcessError as e:
+            return f"Error: {e}"
+    else:
+        return "Unsupported operating system."
+    
+
+def clear_screen():
+    if platform.system() == "Windows":
+        import os
+        os.system("cls")
+    else:
+        subprocess.call("clear", shell=True)
+        
+        
 def main():
     clear_screen()
     while True:
@@ -1379,69 +1467,34 @@ def main():
             break
         else:
             print("Invalid choice!")
-
-def ldap_login(username, password):
-    # Modify the LDAP server details accordingly
-    ldap_server = Server('ldap://dc-1.tvedc.local:389', get_info=ALL)
-    # Replace the base_dn with your LDAP base DN
-    base_dn = 'OU=Tvedc.local,DC=tvedc,DC=local'
-    # Replace the search_filter with your LDAP search filter
-    search_filter = '(sAMAccountName={})'.format(username)
-
-    try:
-        # Attempt to bind to the LDAP server
-        conn = Connection(ldap_server, user='{}@tvedc.local'.format(username), password=password, authentication=SIMPLE)
-        if not conn.bind():
-            print(Fore.RED + "Login failed: Invalid credentials")
+def login(username, password):
+    # Define your list of username-password pairs
+    user_credentials = {
+        "a": "a",
+        "user2": "password2",
+        "user3": "password3"
+    }
+    
+    # Check if the provided username exists in the dictionary
+    if username in user_credentials:
+        # Verify if the provided password matches the stored password
+        if user_credentials[username] == password:
+            print("Login successful!")
+            main()
+            return True
+        else:
+            print("Incorrect password. Please try again.")
             return False
-
-        # Search for the user in LDAP
-        conn.search(search_base=base_dn, search_filter=search_filter, attributes=['cn'])
-        if not conn.entries:
-            print(Fore.RED + "Login failed: User not found")
-            return False
-
-        print(Fore.GREEN + "Login successful!")
-        return True
-
-    except Exception as e:
-        print(Fore.RED + "An error occurred during LDAP authentication:", e)
+    else:
+        print("User not found. Please try again.")
         return False
 
-def clear_screen():
-    if platform.system() == "Windows":
-        import os
-        os.system("cls")
-    else:
-        import subprocess
-        subprocess.call("clear", shell=True)
-
-def get_password(prompt='Enter your password: '):
-    if platform.system() == 'Windows':
-        password = ''
-        print(prompt, end='', flush=True)
-        while True:
-            char = msvcrt.getch()
-            if char == b'\r':
-                print()
-                break
-            elif char == b'\x08':  # Backspace
-                if password:
-                    password = password[:-1]
-                    print('\b \b', end='', flush=True)
-            else:
-                password += char.decode('utf-8')
-                print('*', end='', flush=True)
-    else:
-        password = getpass.getpass(prompt)
-    return password
-
+# Example usage
 if __name__ == "__main__":
     clear_screen()
-    init(autoreset=True)  # Initialize colorama
-
+    # Prompt the user for username and password
     input_username = input("Enter your username: ")
-    input_password = get_password()
-
-    if ldap_login(input_username, input_password):
-        main()
+    input_password = input("Enter your password: ")
+    
+    # Attempt to login with provided credentials
+    login(input_username, input_password)
