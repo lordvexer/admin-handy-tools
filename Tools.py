@@ -64,7 +64,7 @@ import datetime
 import getpass
 import zipfile
 from tqdm import tqdm
-from colorama import Fore, Style
+from colorama import Fore, Style, init
 import moviepy.editor as mp
 import psutil
 import curses
@@ -979,6 +979,7 @@ def list_system_users():
         buf = ctypes.create_unicode_buffer(buf_size.value)
         advapi32.GetUserNameW(buf, ctypes.byref(buf_size))
         users.append(buf.value)
+        print(Fore.RED+"Showing password for windows users NOT supported")
     elif system == "Linux":
         import pwd
         users = [user.pw_name for user in pwd.getpwall()]
@@ -1292,10 +1293,8 @@ def send_udp_packets(target_ip, target_port, message, num_packets, num_threads):
             sock.sendto(packet, (target_ip, target_port))
             progress_bar.update(1)
 
-    # Create progress bars for each thread
     progress_bars = [tqdm(total=num_packets, desc=f"Thread {i+1}") for i in range(num_threads)]
 
-    # Create specified number of threads for sending UDP packets
     threads = []
     for i in range(num_threads):
         progress_bar = progress_bars[i]
@@ -1303,14 +1302,9 @@ def send_udp_packets(target_ip, target_port, message, num_packets, num_threads):
         threads.append(thread)
         thread.start()
 
-    # Wait for all threads to finish
     for thread in threads:
         thread.join()
-
-    # Close the socket
     sock.close()
-
-    # Close progress bars
     for bar in progress_bars:
         bar.close()
 
@@ -1321,11 +1315,11 @@ def ping_target(ip, num_pings, ttl, progress_bar):
     else:
         command = ["ping", "-c", str(num_pings), "-i", str(ttl), ip]
 
-    print(f"Running command: {' '.join(command)}")  # Print the command being executed
+    print(f"Running command: {' '.join(command)}")  
 
     for _ in range(num_pings):
         result = subprocess.run(command)
-        print("Ping result:", result)  # Print the result of the ping command
+        print("Ping result:", result)  
         progress_bar.update(1)
 
 def get_user_input():
@@ -1356,16 +1350,16 @@ def ping_with_progress():
 
 
 def main():
-    Clear_Screen()
+    clear_screen()
     while True:
-        print(Style.RESET_ALL + Fore.RED+ "\nMain Menu:")
+        print(Style.RESET_ALL + Fore.RED + "\nMain Menu:")
         print(Fore.WHITE + "1. Folder Tools")
         print("2. File Tools")
         print("3. Admin Tools")
         print("4. Monitor Tools")
         print("5. Network Tools")
         print("0. Exit")
-        choice = input(Fore.CYAN +"Enter your choice: ")
+        choice = input(Fore.CYAN + "Enter your choice: ")
 
         if choice == '1':
             folder_tools()
@@ -1374,20 +1368,35 @@ def main():
         elif choice == '3':
             admin_tools()
         elif choice == '4':
-            Monitor_tools()
+            monitor_tools()
         elif choice == '5':
-            Network_Tools()
+            network_tools()
         elif choice == '0':
-            print(Fore.GREEN+"Exiting the program. Goodbye!")
+            print(Fore.GREEN + "Exiting the program. Goodbye!")
             print(Style.RESET_ALL)
             break
         else:
             print("Invalid choice!")
 
+def login(username, password):
+    user_credentials = {
+        "admin": "admin",
+        "user2": "password2",
+        "user3": "password3"
+    }
+    
+    if username in user_credentials:
+        if user_credentials[username] == password:
+            print("Login successful!")
+            return True
+        else:
+            print(Fore.RED + "Incorrect password. Goodbye")
+            return False
+    else:
+        print("User not found. Please try again.")
+        return False
 
-
-
-def Clear_Screen():
+def clear_screen():
     if platform.system() == "Windows":
         os.system("cls")
     else:
@@ -1398,5 +1407,9 @@ if __name__ == "__main__":
         os.system("cls")
     else:
         os.system("clear")
-        
-    main()
+    
+    init(autoreset=True)  # Initialize colorama
+    input_username = input("Enter your username: ")
+    input_password = input("Enter your password: ")
+    if login(input_username, input_password):
+        main()
