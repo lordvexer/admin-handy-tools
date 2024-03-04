@@ -86,13 +86,22 @@ def folder_tools():
         folder_path = input("Enter the path of the folder: ")
         list_folder_contents(folder_path)
     elif choice == '2':
-        folder_name = input("Enter the name of the new folder (or 'random' for random names): ")
+        folder_path=input("Enter Path To Create Folder(s): ").strip()
+        if not folder_path:
+            print("No folder path provided. Exiting.")
+        folder_name = input("Enter the name of the new folder (or 'random' for random names): ").strip()
         if folder_name.lower() == "random":
-            num_folders = int(input("Enter the number of random folders to create: "))
-            max_name_length = int(input("Enter the maximum length of random folder names: "))
-            create_many_folders(num_folders, max_name_length)
+            num_folders_input = input("Enter the number of random folders to create (Default=10): ").strip()
+            num_folders = int(num_folders_input) if num_folders_input else 10
+
+            max_length_input = input("Enter the maximum length of random folder names (Default=10): ").strip()
+            max_name_length = int(max_length_input) if max_length_input else 10
+            
+            create_many_folders(num_folders, max_name_length, folder_path)
+        elif not folder_name:
+            print("No folder name provided. Exiting.")
         else:
-            create_folder(folder_name)
+            create_folder(folder_name,folder_path)
     elif choice == '3':
         delete_folders()
     elif choice == '4':
@@ -177,29 +186,37 @@ def list_folder_contents(folder_path, indent=''):
 def create_random_folder_name(max_length):
     return str(uuid.uuid4())[:max_length]
 
-def create_many_folders(num_folders, max_name_length):
+def create_many_folders(num_folders, max_name_length, folder_path):
     for _ in range(num_folders):
         folder_name = create_random_folder_name(max_name_length)
+        full_path = os.path.join(folder_path, folder_name)
         try:
-            os.mkdir(folder_name)
+            if len(folder_name) > max_name_length:
+                raise ValueError(f"Folder name '{folder_name}' exceeds maximum length.")
+            if os.path.exists(full_path):
+                print(f"{Fore.YELLOW}Folder '{folder_name}' already exists!")
+                continue
+            os.mkdir(full_path)
             print(f"{Fore.GREEN}Folder '{folder_name}' created successfully.")
-        except FileExistsError:
-            print(f"{Fore.YELLOW}Folder '{folder_name}' already exists!")
         except Exception as e:
             print(f"{Fore.RED}An error occurred while creating folder '{folder_name}': {e}")
 
-def create_folder(folder_name):
+
+def create_folder(folder_name, folder_path):
     folder_names = folder_name.split(',')
-    for name in folder_names:
-        try:
-            os.mkdir(name.strip()) 
-            print(f"{Fore.GREEN}Folder '{name.strip()}' created successfully.")
-        except FileExistsError:
-            print(f"{Fore.YELLOW}Folder '{name.strip()}' already exists!")
-        except Exception as e:
-            print(f"{Fore.RED}An error occurred while creating folder '{name.strip()}': {e}")
-
-
+    try:
+        for name in folder_names:
+            # Validate folder name
+            if not name.strip():
+                print(f"{Fore.RED}Invalid folder name: '{name.strip()}'")
+                continue
+            
+            full_path = os.path.join(folder_path, name.strip())
+            os.makedirs(full_path, exist_ok=True)  # Creates intermediate directories if needed
+            print(f"{Fore.GREEN}Folder '{name.strip()}' created successfully at '{full_path}'.")
+    except Exception as e:
+        print(f"{Fore.RED}An error occurred while creating folders: {e}")
+        
 def delete_all_folders_in_current_path():
     current_path = os.getcwd()
     delete_all_folders(current_path)
