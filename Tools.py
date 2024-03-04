@@ -2,6 +2,7 @@ import os
 import platform
 import subprocess
 import sys
+import logging
 
 # Function to check and install packages
 def check_and_install(package):
@@ -30,7 +31,7 @@ for package in required_packages:
     check_and_install(package)
 
 # Now import your modules
-from ldap3 import Server, Connection, SIMPLE, SYNC, ALL
+from ldap3 import Server, Connection, SIMPLE, SYNC, ALL,ALL_ATTRIBUTES, ALL_OPERATIONAL_ATTRIBUTES, SUBTREE
 from PIL import Image
 from colorama import Fore, Style, init
 from moviepy.editor import VideoFileClip
@@ -227,11 +228,69 @@ def show_folder_info(folder_path):
     print(f"Smallest File: {get_smallest_file(folder_path)}")
     print(f"Last Modified: {get_last_modified(folder_path)}")
     print(f"First Modified: {get_first_modified(folder_path)}")
-    print(f"Total Size: {get_folder_size(folder_path)} bytes")
+    total_size_bytes = get_folder_size(folder_path)
+    if total_size_bytes is not None:
+        total_size_readable = convert_bytes_to_readable(total_size_bytes)
+        print(f"Total Size: {total_size_readable}")
     
 
+def get_last_modified(path):
+    try:
+        if platform.system() == "Windows":
+            last_modified_time = os.path.getmtime(path)
+        else:
+            stat = os.stat(path)
+            last_modified_time = stat.st_mtime
+        # Convert Unix timestamp to datetime object
+        last_modified_dt = datetime.datetime.fromtimestamp(last_modified_time)
+        # Format datetime object as a human-readable string
+        last_modified_str = last_modified_dt.strftime('%Y-%m-%d %H:%M:%S')
+        return last_modified_str
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
+def get_first_modified(path):
+    try:
+        if platform.system() == "Windows":
+            first_modified_time = os.path.getctime(path)
+        else:
+            stat = os.stat(path)
+            first_modified_time = stat.st_mtime
+        # Convert Unix timestamp to datetime object
+        first_modified_dt = datetime.datetime.fromtimestamp(first_modified_time)
+        # Format datetime object as a human-readable string
+        first_modified_str = first_modified_dt.strftime('%Y-%m-%d %H:%M:%S')
+        return first_modified_str
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+    
+def get_folder_size(folder_path):
+    total_size = 0
+    try:
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                total_size += os.path.getsize(file_path)
+        return total_size
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
+def convert_bytes_to_readable(size_bytes):
+    # Define the units
+    units = ['bytes', 'KB', 'MB', 'GB', 'TB']
+    # Initialize the index and the size
+    index = 0
+    size = float(size_bytes)
+    # Iterate through the units until the size is smaller than 1024
+    while size >= 1024 and index < len(units) - 1:
+        size /= 1024.0
+        index += 1
+    # Return the formatted size with the corresponding unit
+    return f"{size:.2f} {units[index]}"
+    
 ##################################### FILE TOOLS #####################################
 
 
@@ -1252,11 +1311,11 @@ def network_tools():
     print("2.  Scan Open Ports")
     print("3.  Network Scaner")
     print("4.  Send Magic Packet")
-    print("5.  Down Client With UDP Packet")
-    print("6.  Down Client With TCP Packet ")
+    print("5.  Test Client With UDP Packet")
+    print("6.  Test Client With TCP Packet ")
     print("7.  FireWall Status")
     print("8.  Speed Test")
-    print("9.  Find Computer Name With IP")
+    print("9.  Find Computer and User info")
     print("10. Routing")
     print("0.  Back")
     choice=input("Enter Your Choice:")
@@ -1286,9 +1345,17 @@ def network_tools():
     elif choice=='8':
         run_speed_test_menu()
     elif choice=='9':
-        ip_address = input("Enter IP Address:")
-        computer_name = get_hostname(ip_address)
-        print("Computer name for IP", Fore.RED + ip_address, "is:", Fore.GREEN + computer_name)
+        ip_address = input("Enter IP Address: ")
+        computer_name = get_hostname_from_ip(ip_address)
+        if computer_name:
+            print(f"Computer name: {computer_name}")
+            usernames = get_user_by_computer_name(computer_name)
+            if usernames:
+                print(f"User(s) associated with computer {computer_name}: {', '.join(usernames)}")
+            else:
+                print(f"No user found for computer {computer_name}")
+        else:
+            print(f"Unable to retrieve computer name for IP {ip_address}")
     elif choice=='10':
         route_options()
         
@@ -1664,12 +1731,62 @@ def run_traceroute(destination):
     else:
         print("Error:", result.stderr)  
         
-def get_hostname(ip_address):
+        
+        
+def get_hostname_from_ip(ip_address):
     try:
-        hostname, _, _ = socket.gethostbyaddr(ip_address)
-        return hostname
-    except socket.herror:
-        return "Unknown"
+        if platform.system() == "Windows":
+            result = subprocess.run(['nslookup', ip_address], capture_output=True, text=True)
+            if result.returncode == 0:
+                lines = result.stdout.split('\n')
+                for line in lines:
+                    if 'Name:' in line:
+                        return line.split(':')[1].strip()
+        else:
+            result = subprocess.run(['host', ip_address], capture_output=True, text=True)
+            if result.returncode == 0:
+                lines = result.stdout.split('\n')
+                return lines[0].split(' ')[-1].strip('.')
+        return None
+    except Exception as e:
+        print(f"Error retrieving hostname: {e}")
+        return None
+
+def get_user_by_computer_name(computer_name):
+    server = Server('ldap://dc-1.tvedc.local:389')
+    with Connection(server, user='finder', password='Aa@123456') as conn:
+        try:
+            if not conn.bind():
+                print("LDAP bind failed. Check username and password.")
+                return []
+
+            conn.search(
+                search_base='OU=Tvedc.local,DC=tvedc,DC=local',  # Update with your domain information
+                search_filter=f'(&(objectCategory=computer)(sAMAccountName={computer_name}$))',
+                attributes=['memberOf'],
+                search_scope=SUBTREE
+            )
+            response = conn.response
+            if response:
+                computer_dn = response[0]['dn']
+                conn.search(
+                    search_base='OU=Tvedc.local,DC=tvedc,DC=local',  # Update with your domain information
+                    search_filter=f'(&(objectCategory=person)(objectClass=user)(memberOf={computer_dn}))',
+                    attributes=['sAMAccountName'],
+                    search_scope=SUBTREE
+                )
+                if conn.entries:
+                    usernames = [entry.sAMAccountName.value for entry in conn.entries]
+                    return usernames
+                else:
+                    return []
+            else:
+                return []
+        except Exception as e:
+            print(f"LDAP connection error: {e}")
+            return []
+
+
     
 def add_route(destination, gateway):
     try:
