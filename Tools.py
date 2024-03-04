@@ -70,7 +70,7 @@ def folder_tools():
     print("2. Create a new folder")
     print("3. Delete folder(s)")
     print("4. Show information of a folder")
-    print("5. Search for a file")
+    print("5. Search for a File and Folders")
     print("6. Copy files")
     print("7. Rename files or folders")
     print("8. Compress folder")
@@ -146,20 +146,22 @@ def folder_tools():
 def delete_folders():
     clear_screen()
     print(Fore.RED + "\nDelete Folder(s) Menu:")
-    print(Fore.YELLOW + "1. Delete all folders in the current path")
+    print(Fore.YELLOW + "1. Delete all Empty folders")
     print("2. Delete all folders in a directory")
     print("3. Delete folder(s) by name")
     print("0. Back")
     choice = input(Fore.CYAN +"Enter your choice: ")
 
     if choice == '1':
-        delete_all_folders_in_current_path()
+        folder_path=input("Enter Path:")
+        delete_empty_folders_in_path(folder_path)
     elif choice == '2':
         folder_path = input("Enter the path of the directory: ")
         delete_all_folders(folder_path)
     elif choice == '3':
+        folder_path=input("Enter Path:")
         folder_names = input("Enter the name(s) of the folder(s) to delete (separated by commas): ")
-        delete_folders_by_name(folder_names)
+        delete_folders_by_name(folder_names,folder_path)
     elif choice == '0':
          folder_tools()
     else:
@@ -189,37 +191,43 @@ def create_random_folder_name(max_length):
 def create_many_folders(num_folders, max_name_length, folder_path):
     for _ in range(num_folders):
         folder_name = create_random_folder_name(max_name_length)
-        full_path = os.path.join(folder_path, folder_name)
-        try:
-            if len(folder_name) > max_name_length:
-                raise ValueError(f"Folder name '{folder_name}' exceeds maximum length.")
-            if os.path.exists(full_path):
-                print(f"{Fore.YELLOW}Folder '{folder_name}' already exists!")
-                continue
-            os.mkdir(full_path)
-            print(f"{Fore.GREEN}Folder '{folder_name}' created successfully.")
-        except Exception as e:
-            print(f"{Fore.RED}An error occurred while creating folder '{folder_name}': {e}")
-
+        create_folder(folder_name, folder_path)
 
 def create_folder(folder_name, folder_path):
     folder_names = folder_name.split(',')
     try:
         for name in folder_names:
             # Validate folder name
-            if not name.strip():
-                print(f"{Fore.RED}Invalid folder name: '{name.strip()}'")
+            name = name.strip()
+            if not name:
+                print(f"{Fore.RED}Invalid folder name: '{name}'")
                 continue
             
-            full_path = os.path.join(folder_path, name.strip())
+            full_path = os.path.join(folder_path, name)
+            if os.path.exists(full_path):
+                print(f"{Fore.YELLOW}Folder '{name}' already exists at '{full_path}'!")
+                continue
+            
             os.makedirs(full_path, exist_ok=True)  # Creates intermediate directories if needed
-            print(f"{Fore.GREEN}Folder '{name.strip()}' created successfully at '{full_path}'.")
+            print(f"{Fore.GREEN}Folder '{name}' created successfully at '{full_path}'.")
     except Exception as e:
         print(f"{Fore.RED}An error occurred while creating folders: {e}")
+
         
-def delete_all_folders_in_current_path():
-    current_path = os.getcwd()
-    delete_all_folders(current_path)
+def delete_empty_folders_in_path(folder_path):
+    try:
+        # Walk through the directory tree starting from the given folder path
+        for root, dirs, files in os.walk(folder_path, topdown=False):
+            for directory in dirs:
+                folder = os.path.join(root, directory)
+                # Check if the folder is empty
+                if not os.listdir(folder):
+                    # Delete the empty folder
+                    os.rmdir(folder)
+                    print(f"Deleted empty folder: {folder}")
+        print("Empty folders deletion completed successfully.")
+    except Exception as e:
+        print(f"An error occurred while deleting empty folders: {e}")
 
 def delete_all_folders(folder_path):
     try:
@@ -231,16 +239,17 @@ def delete_all_folders(folder_path):
     except FileNotFoundError:
         print(f"{Fore.YELLOW}Directory not found!")
 
-def delete_folders_by_name(folder_names):
-    names = folder_names.split(',')
-    for name in names:
-        try:
-            shutil.rmtree(name.strip())  
+def delete_folders_by_name(folder_names, folder_path):
+    try:
+        for name in folder_names:
+            full_path = os.path.join(folder_path, name.strip())
+            shutil.rmtree(full_path)
             print(f"{Fore.GREEN}Folder '{name.strip()}' deleted successfully.")
-        except FileNotFoundError:
-            print(f"{Fore.YELLOW}Folder '{name.strip()}' not found!")
-        except Exception as e:
-            print(f"{Fore.RED}An error occurred while deleting folder '{name.strip()}': {e}")
+    except FileNotFoundError:
+        print(f"{Fore.YELLOW}Folder '{name.strip()}' not found!")
+    except Exception as e:
+        print(f"{Fore.RED}An error occurred while deleting folder '{name.strip()}': {e}")
+
 
 def show_folder_info(folder_path):
     print(Fore.YELLOW + f"Information for folder: {folder_path}")
@@ -323,7 +332,7 @@ def file_tools():
     print(Fore.YELLOW + "1. File Information")
     print("2. File Operations")
     print("3. File Comparison")
-    print("4. File Search")
+    print("4. Search File and Folders")
     print("5. File Compress")
     print("6. File DeCompress")
     print("7. File Encryption")
@@ -469,18 +478,32 @@ def get_smallest_file(folder_path):
                 smallest_file = file_path
     return smallest_file if smallest_file else "No files found in the folder."
 
-def search_for_file(folder_path, file_name):
-    found_files = []
-    for dirpath, _, filenames in os.walk(folder_path):
-        for filename in filenames:
-            if filename == file_name:
-                found_files.append(os.path.join(dirpath, filename))
-    if found_files:
-        print("Found files:")
-        for file_path in found_files:
-            print(file_path)
-    else:
-        print("File not found in the folder.")
+def search_for_file(folder_path, search_query):
+    try:
+        found_items = []
+        # Convert search query to lowercase for case-insensitive comparison
+        search_query_lower = search_query.lower()
+        
+        for dirpath, dirnames, filenames in os.walk(folder_path):
+            # Search for files matching the search query
+            for filename in filenames:
+                if search_query_lower in filename.lower():
+                    found_items.append(os.path.join(dirpath, filename))
+            # Search for folders matching the search query
+            for dirname in dirnames:
+                if search_query_lower in dirname.lower():
+                    found_items.append(os.path.join(dirpath, dirname))
+        
+        if found_items:
+            print("Found items:")
+            for item in found_items:
+                print(item)
+        else:
+            print("No items found matching the search query.")
+    except Exception as e:
+        print(f"An error occurred while searching for items: {e}")
+        
+        
 
 def copy_or_move_files(source_path, destination_path):
     shutil.copytree(source_path, destination_path)
