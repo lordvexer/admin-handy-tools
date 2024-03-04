@@ -56,6 +56,7 @@ import winreg
 import msvcrt 
 import speedtest
 import iperf3
+import re
 
 
 
@@ -109,8 +110,14 @@ def folder_tools():
         show_folder_info(folder_path)
     elif choice == '5':
         folder_path = input("Enter the path of the folder to search in: ")
-        file_name = input("Enter the name of the file to search for: ")
-        search_for_file(folder_path, file_name)
+        if not folder_path:
+            folder_path = input("Enter the path of the folder to search in: ")
+        else:
+            file_name = input("Enter the name of the file to search for: ")
+            if not file_name:
+                file_name = input("Enter the name of the file to search for: ")
+            else:    
+                search_for_file(folder_path, file_name)
     elif choice == '6':
         source_path = input("Enter the path of the source folder: ")
         destination_path = input("Enter the path of the destination folder: ")
@@ -488,16 +495,18 @@ def search_for_file(folder_path, search_query):
             # Search for files matching the search query
             for filename in filenames:
                 if search_query_lower in filename.lower():
-                    found_items.append(os.path.join(dirpath, filename))
+                    found_items.append((os.path.join(dirpath, filename), filename))
             # Search for folders matching the search query
             for dirname in dirnames:
                 if search_query_lower in dirname.lower():
-                    found_items.append(os.path.join(dirpath, dirname))
+                    found_items.append((os.path.join(dirpath, dirname), dirname))
         
         if found_items:
             print("Found items:")
-            for item in found_items:
-                print(item)
+            for item_path, item_name in found_items:
+                # Highlight matching parts in the item name
+                highlighted_name = re.sub(f'({search_query})', r'\033[1;31m\1\033[0m', item_name, flags=re.IGNORECASE)
+                print(f"{item_path}: {highlighted_name}")
         else:
             print("No items found matching the search query.")
     except Exception as e:
