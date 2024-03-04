@@ -66,7 +66,7 @@ import iperf3
 def folder_tools():
     clear_screen()
     print(Fore.RED + "\nFolder Tools Menu:")
-    print(Fore.YELLOW + "1. List contents of a folder")
+    print("1. List contents of a folder")
     print("2. Create a new folder")
     print("3. Delete folder(s)")
     print("4. Show information of a folder")
@@ -159,14 +159,20 @@ def delete_folders():
 
 
 
-def list_folder_contents(folder_path):
+def list_folder_contents(folder_path, indent=''):
     try:
         contents = os.listdir(folder_path)
-        print("Contents of folder:")
+        print(indent + "Contents of folder:")
         for item in contents:
-            print(item)
+            item_path = os.path.join(folder_path, item)
+            print(indent + "|-- " + item)
+            if os.path.isdir(item_path):
+                list_folder_contents(item_path, indent + "|   ")
     except FileNotFoundError:
-        print("Folder not found!")
+        print(indent + "Folder not found!")
+    except PermissionError:
+        print(indent + "Permission denied!")
+        
 
 def create_random_folder_name(max_length):
     return str(uuid.uuid4())[:max_length]
