@@ -1255,7 +1255,7 @@ def network_tools():
     print("7.  FireWall Status")
     print("8.  Speed Test")
     print("9.  Find Computer Name With IP")
-    print("10. Next Page")
+    print("10. Routing")
     print("0.  Back")
     choice=input("Enter Your Choice:")
     if choice=='1':
@@ -1288,15 +1288,34 @@ def network_tools():
         computer_name = get_hostname(ip_address)
         print("Computer name for IP", Fore.RED + ip_address, "is:", Fore.GREEN + computer_name)
     elif choice=='10':
-        network_tools()
+        route_options()
+        
     elif choice=='0':
         main()
     else:
         print(Fore.RED+"Invalid choice...")
 
 
-        
-        
+def route_options():
+    print(Fore.RED+"\nRoute Tools Menu:")
+    print(Fore.YELLOW +"1. Show Route Table")
+    print("2.  Add Route")      
+    print("3.  Delete Route")    
+    choice=input("Enter Your Choice:")
+    if choice=='1':
+        route_table = get_route_table()
+        display_route_table(route_table)
+    elif choice=='2':
+        destination = input("Enter Destination IP: ")
+        gateway = input("Enter Gateway IP: ")
+        add_route(destination, gateway)  
+    elif choice=='3':
+        route_table = get_route_table()
+        display_route_table(route_table)
+        row_number = int(input("Enter the row number of the route to delete: "))
+        delete_route(route_table, row_number)
+    
+    
 def scan_open_ports():
     clear_screen()
     print(Fore.RED+"\nScan Port Tools Menu:")
@@ -1633,6 +1652,99 @@ def get_hostname(ip_address):
         return hostname
     except socket.herror:
         return "Unknown"
+    
+def add_route(destination, gateway):
+    try:
+        # Determine the appropriate command based on the operating system
+        if platform.system() == "Windows":
+            command = f"route add {destination} mask 255.255.255.255 {gateway}"
+        elif platform.system() == "Linux":
+            command = f"route add -host {destination} gw {gateway}"
+        else:
+            print("Unsupported platform.")
+            return
+
+        # Execute the command
+        subprocess.run(command, shell=True, check=True)
+        print("Route added successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error adding route: {e}")
+   
+
+def get_route_table():
+    route_table = []
+    system = platform.system()
+    if system == "Linux":
+        try:
+            # Run ip route command to get the route table information
+            output = subprocess.check_output(["ip", "route"]).decode("utf-8")
+            # Parse the output to extract route table information
+            lines = output.split("\n")
+            for line in lines:
+                parts = line.split()
+                if len(parts) >= 3:
+                    destination = parts[0]
+                    gateway = parts[2]
+                    interface = parts[3] if len(parts) > 3 else ""
+                    route_table.append((destination, gateway, interface))
+        except subprocess.CalledProcessError:
+            print("Error: Failed to retrieve route table information on Linux.")
+    elif system == "Windows":
+        try:
+            # Run route print command to get the route table information
+            output = subprocess.check_output(["route", "print"]).decode("utf-8")
+            # Parse the output to extract route table information
+            lines = output.split("\n")
+            for line in lines[4:-2]:  # Skip the header and footer lines
+                parts = line.split()
+                if len(parts) >= 4:
+                    destination = parts[0]
+                    gateway = parts[2]
+                    interface = parts[3]
+                    route_table.append((destination, gateway, interface))
+        except subprocess.CalledProcessError:
+            print("Error: Failed to retrieve route table information on Windows.")
+    else:
+        print("Unsupported platform.")
+    return route_table
+
+def display_route_table(route_table):
+    if route_table:
+        print("Route Table:")
+        for i, (destination, gateway, interface) in enumerate(route_table, start=1):
+            print(f"{i}. Destination: {destination}, Gateway: {gateway}, Interface: {interface}")
+    else:
+        print("No route table information available.")
+
+def delete_route(route_table, row_number):
+    if row_number < 1 or row_number > len(route_table):
+        print("Error: Invalid row number.")
+        return False
+    entry = route_table[row_number - 1]
+    destination = entry[0]
+    system = platform.system()
+    if system == "Linux":
+        try:
+            subprocess.run(["sudo", "ip", "route", "del", destination])
+            print(f"Route with destination {destination} deleted successfully.")
+            return True
+        except subprocess.CalledProcessError:
+            print(f"Error: Failed to delete route with destination {destination}.")
+            return False
+    elif system == "Windows":
+        try:
+            subprocess.run(["route", "delete", destination])
+            print(f"Route with destination {destination} deleted successfully.")
+            return True
+        except subprocess.CalledProcessError:
+            print(f"Error: Failed to delete route with destination {destination}.")
+            return False
+    else:
+        print("Unsupported platform.")
+        return False
+
+
+
  ##################################### MAIN  #####################################
    
 
@@ -1647,13 +1759,13 @@ def clear_screen():
 def main():
     clear_screen()
     while True:
-        print(Fore.GREEN+"db   db  .d8b.  d8b   db d8888b. db    db      d888888b  .d88b.   .d88b.  db      .d8888. ")
-        print(Fore.GREEN+"88   88 d8' `8b 888o  88 88  `8D `8b  d8'      `~~88~~' .8P  Y8. .8P  Y8. 88      88'  YP ")
-        print(Fore.GREEN+"88ooo88 88ooo88 88V8o 88 88   88  `8bd8'          88    88    88 88    88 88      `8bo.   ")
-        print(Fore.GREEN+"88~~~88 88~~~88 88 V8o88 88   88    88            88    88    88 88    88 88        `Y8b. ")
-        print(Fore.GREEN+"88   88 88   88 88  V888 88  .8D    88            88    `8b  d8' `8b  d8' 88booo. db   8D ")
-        print(Fore.GREEN+"YP   YP YP   YP VP   V8P Y8888D'    YP            YP     `Y88P'   `Y88P'  Y88888P `8888Y' ")
-        # print(Fore.RED+"By HamidReza")
+        # print(Fore.GREEN+"db   db  .d8b.  d8b   db d8888b. db    db      d888888b  .d88b.   .d88b.  db      .d8888. ")
+        # print(Fore.GREEN+"88   88 d8' `8b 888o  88 88  `8D `8b  d8'      `~~88~~' .8P  Y8. .8P  Y8. 88      88'  YP ")
+        # print(Fore.GREEN+"88ooo88 88ooo88 88V8o 88 88   88  `8bd8'          88    88    88 88    88 88      `8bo.   ")
+        # print(Fore.GREEN+"88~~~88 88~~~88 88 V8o88 88   88    88            88    88    88 88    88 88        `Y8b. ")
+        # print(Fore.GREEN+"88   88 88   88 88  V888 88  .8D    88            88    `8b  d8' `8b  d8' 88booo. db   8D ")
+        # print(Fore.GREEN+"YP   YP YP   YP VP   V8P Y8888D'    YP            YP     `Y88P'   `Y88P'  Y88888P `8888Y' ")
+        # # print(Fore.RED+"By HamidReza")
         print(Style.RESET_ALL + Fore.RED + "\nMain Menu:")
         print(Fore.WHITE + "1. Folder Tools")
         print("2. File Tools")
