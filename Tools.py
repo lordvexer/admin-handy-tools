@@ -1265,7 +1265,7 @@ def network_tools():
     elif choice=='2':
         scan_open_ports()
     elif choice=='3':
-        subnet, ip_range = get_user_input()
+        subnet, ip_range = get_user_input_network_scaner()
         scan_network(ip_range, subnet)
         print("\nScanning Complete!")
     elif choice=='5':
@@ -1394,7 +1394,7 @@ def display_progress_bar(percent):
 
 def get_open_ports_with_app():
     open_ports_with_app = {}
-    total_ports = 1024  # Total number of ports to scan
+    total_ports = 65535  # Total number of ports to scan
     for i, port in enumerate(range(1, total_ports + 1), 1):
         percent = i / total_ports
         display_progress_bar(percent)
@@ -1467,7 +1467,7 @@ def scan_network(ip_range, subnet):
         percent = (progress / total_ips)
         display_progress_bar(percent)
 
-def get_user_input():
+def get_user_input_network_scaner():
     subnet = input("Enter the subnet (e.g., 192.168.1): ")
     start_ip = int(input("Enter the starting IP address (e.g., 1): "))
     end_ip = int(input("Enter the ending IP address (e.g., 254): "))
@@ -1537,7 +1537,7 @@ def ping_target(ip, num_pings, ttl, progress_bar):
         print("Ping result:", result)  
         progress_bar.update(1)
 
-def get_user_input():
+def get_user_input_down_tcp():
     ip_address = input("Enter the target IP address: ")
     num_pings = int(input("Enter the number of pings: "))
     num_threads = int(input("Enter the number of threads: "))
@@ -1545,7 +1545,7 @@ def get_user_input():
     return ip_address, num_pings, num_threads, ttl
 
 def ping_with_progress():
-    ip_address, num_pings, num_threads, ttl = get_user_input()
+    ip_address, num_pings, num_threads, ttl = get_user_input_down_tcp()
     progress_bars = [tqdm(total=num_pings, desc=f"Thread {i+1}") for i in range(num_threads)]
 
     threads = []
