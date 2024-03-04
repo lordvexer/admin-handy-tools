@@ -1,86 +1,62 @@
 import os
 import platform
+import subprocess
+import sys
+
+# Function to check and install packages
+def check_and_install(package):
+    try:
+        __import__(package)
+    except ImportError:
+        print(f"{package} not found. Installing...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# List of required packages
+required_packages = [
+    "pywin32",
+    "colorama",
+    "Pillow",
+    "psutil",
+    "windows-curses",  # Assuming you need this for Windows
+    "moviepy",
+    "cryptography",
+    "tqdm",
+    "speedtest-cli",
+    "iperf3"
+]
+
+# Install required packages if not already installed
+for package in required_packages:
+    check_and_install(package)
+
+# Now import your modules
 from ldap3 import Server, Connection, SIMPLE, SYNC, ALL
-
-# Check if colorama package is installed
-try:
-        import pkg_resources
-        pkg_resources.require("pywin32")
-except ImportError:
-        print("pywin32 not found. Installing...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pywin32"])
-
-try:
-    import colorama
-except ImportError:
-    # Install colorama package
-    os.system("pip install colorama")
-    import colorama
-
-try:
-    from PIL import Image
-except ImportError:
-    # Install Pillow package
-    os.system("pip install Pillow")
-    from PIL import Image
-try:
-    import psutil
-except ImportError:
-    # Install Pillow package
-    os.system("pip install psutil")
-    import psutil
-    
-try:
-    import curses
-except ImportError:
-    # Install Pillow package
-    os.system("pip install windows-curses")
-    import curses
-    
-try:
-    from moviepy.editor import VideoFileClip
-except ImportError:
-    # Install Pillow moviepy package
-    os.system("pip install Pillow moviepy")
-    from moviepy.editor import VideoFileClip
-
-
-# Check if cryptography package is installed
-try:
-    from cryptography.fernet import Fernet
-except ImportError:
-    # Install cryptography package
-    os.system("pip install cryptography")
-    from cryptography.fernet import Fernet
-
-# Import other necessary modules
+from PIL import Image
+from colorama import Fore, Style, init
+from moviepy.editor import VideoFileClip
+from cryptography.fernet import Fernet
 import getpass
 import shutil
 import hashlib
 import traceback
-import hashlib
 import uuid
 import string
 import random
 import datetime
-import getpass
 import zipfile
-from tqdm import tqdm
-from colorama import Fore, Style, init
-import moviepy.editor as mp
 import psutil
 import curses
 import time
 import socket
-import sys
 import threading
-import subprocess
 import ctypes
 import win32api
 import winreg
 import msvcrt 
 import speedtest
 import iperf3
+
+
 
 
 ##################################### FOLDER TOOLS #####################################
@@ -1178,6 +1154,7 @@ def display_processes():
         subprocess.call('ps aux', shell=True)
     else:
         print("Unsupported operating system")
+    close_task_list()
         
 def display_hardware_usage():
     clear_screen()
@@ -1237,8 +1214,33 @@ def display_system_info():
             
 
                
-             
-             
+def close_task_list():
+    print(Fore.BLUE+"Did You want to Clear Process?")
+    choice=input("Enter (Y) to Clear All Or (N) to Cancell: ")
+    if choice=="y"or"Y":
+        end_all_tasks()
+    elif choice=="N"or"n":
+        monitor_tools()
+    else:
+        print("incorrect!")           
+        close_task_list()
+        
+def end_all_tasks():
+    system = platform.system()
+    if system == "Windows":
+        try:
+            subprocess.run(["taskkill", "/F", "/FI", "USERNAME ne SYSTEM"])
+            print("All tasks terminated except system tasks.")
+        except subprocess.CalledProcessError:
+            print("Error: Failed to terminate tasks.")
+    elif system == "Linux":
+        try:
+            subprocess.run(["sudo", "pkill", "-u", "$(whoami)"])
+            print("All tasks terminated except system tasks.")
+        except subprocess.CalledProcessError:
+            print("Error: Failed to terminate tasks.")
+    else:
+        print("Unsupported platform.")
 ##################################### NETWORK TOOLS #####################################
 
 
@@ -1324,7 +1326,7 @@ def scan_open_ports():
     print("0. Back")
     choice=input("Enter Your Choice:")
     if choice=='1':
-        display_open_ports()
+        display_open_ports_with_app()
     elif choice=='2':
         ip_address, port_range = get_user_input_port_scan()
         open_ports = get_open_ports(ip_address, port_range)
@@ -1380,6 +1382,9 @@ def Network_connections():
         print(f"    {laddr} --> {raddr} [{conn.status}]")
 
 
+
+
+
 def display_progress_bar(percent):
     bar_length = 40
     progress = int(percent * bar_length)
@@ -1387,14 +1392,8 @@ def display_progress_bar(percent):
     bar = f"\033[32m{'█' * progress}\033[0m\033[31m{'-' * remaining}\033[0m"
     print(f"Scanning : [{bar}] {int(percent * 100)}%", end='\r')
 
-def display_open_ports():
-    clear_screen()
-    print(Fore.RED+"Open Ports:")
-    for port in get_open_ports():
-        print(f"    Port {port}")
-
-def get_open_ports():
-    open_ports = []
+def get_open_ports_with_app():
+    open_ports_with_app = {}
     total_ports = 1024  # Total number of ports to scan
     for i, port in enumerate(range(1, total_ports + 1), 1):
         percent = i / total_ports
@@ -1403,11 +1402,30 @@ def get_open_ports():
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(0.1)  # Adjust timeout as needed
                 s.connect(("127.0.0.1", port))
-            open_ports.append(port)
-        except:
+            if platform.system() == "Windows":
+                connections = psutil.net_connections(kind='inet')
+                for conn in connections:
+                    if conn.laddr.port == port:
+                        process = psutil.Process(conn.pid)
+                        open_ports_with_app[port] = process.name()
+            else:  # Assume Unix-like system
+                process = psutil.Process(psutil.net_connections()[0].pid)
+                open_ports_with_app[port] = process.name()
+        except Exception as e:
             pass
     print()  # Move to the next line after progress bar
-    return open_ports
+    return open_ports_with_app
+
+# Display open ports and the corresponding applications
+def display_open_ports_with_app():
+    open_ports_with_app = get_open_ports_with_app()
+    print("Open Ports:")
+    for port, app in open_ports_with_app.items():
+        print(f"Port {port} is being used by {app}")
+
+
+
+
 
 def get_open_ports(ip_address, port_range):
     open_ports = []
