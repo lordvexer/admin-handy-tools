@@ -27,8 +27,8 @@ required_packages = [
 ]
 
 # Install required packages if not already installed
-for package in required_packages:
-    check_and_install(package)
+# for package in required_packages:
+#     check_and_install(package)
 
 # Now import your modules
 from ldap3 import Server, Connection, SIMPLE, SYNC, ALL,ALL_ATTRIBUTES, ALL_OPERATIONAL_ATTRIBUTES, SUBTREE
@@ -57,7 +57,8 @@ import msvcrt
 import speedtest
 import iperf3
 import re
-
+import patoolib
+import rarfile
 
 
 
@@ -128,7 +129,12 @@ def folder_tools():
         rename_file_or_folder(old_name, new_name)
     elif choice == '8':
         folder_path = input("Enter the path of the folder to compress: ")
-        compress_folder(folder_path)
+        compress_path = input("Enter the path to Save compress File: ")
+        compress_format=input("Enter Compress Format(zip, rar, tar, gz, bz2, xz):")
+        compress_level=input("Enter Compress LEVEL(0-9)(except: rar > 0-5 and tar > blank):")
+        split_on_size=input("Enter Size Of You Need To Splite(MB):")
+        compress_password=input("If You Need Set Password Enter It(Or Not Leave Blank):")
+        compress_folder(folder_path,compress_format,compress_level,split_on_size,compress_password,compress_path)
     elif choice == '9':
         folder_path = input("Enter the path of the folder to search for duplicates: ")
         find_duplicates(folder_path)
@@ -522,9 +528,31 @@ def rename_file_or_folder(old_name, new_name):
     os.rename(old_name, new_name)
     print(f"{Fore.GREEN}Renamed successfully.")
 
-def compress_folder(folder_path):
-    shutil.make_archive(folder_path, 'zip', folder_path)
-    print(f"{Fore.GREEN}Folder compressed successfully.")
+def compress_folder(folder_path, compress_format, compress_level, split_on_size, compress_password):
+    try:
+        # Check if the compression format is supported
+        supported_formats = ['zip', 'rar', 'tar', 'gz', 'bz2', 'xz']
+        if compress_format not in supported_formats:
+            raise ValueError(f"Compression format must be one of {supported_formats}.")
+
+        # Construct the archive name
+        base_name = os.path.basename(folder_path)
+        archive_name = f"{folder_path}.{compress_format}"
+
+        # Compress the folder
+        if compress_format == 'zip':
+            shutil.make_archive(archive_name, 'zip', folder_path)
+        elif compress_format == 'rar':
+            raise NotImplementedError("RAR compression is not yet supported.")
+        else:
+            raise NotImplementedError(f"Compression format '{compress_format}' is not supported yet.")
+
+        print(f"{Fore.GREEN}Folder compressed successfully.")
+    except Exception as e:
+        print(f"{Fore.RED}Error: {e}")
+
+
+        
 
 def find_duplicates(folder_path):
     hash_map = {}
@@ -1574,20 +1602,52 @@ def get_user_input_port_scan():
     port_range = (start_port, end_port)
     return ip_address, port_range
 
+RED = "\033[91m"
+GREEN = "\033[92m"
+RESET = "\033[0m"
+
+def check_host_status(ip):
+    result = subprocess.run(['ping', '-c', '1', ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if result.returncode == 0:
+        return True  # Host is online
+    else:
+        return False  # Host is offline
+
+# Scan network function
 def scan_network(ip_range, subnet):
     total_ips = ip_range[1] - ip_range[0] + 1
     progress = 0
+    online_hosts = []
+    offline_hosts = []
+
     for i in range(ip_range[0], ip_range[1] + 1):
         ip = f"{subnet}.{i}"
-        try:
-            hostname = socket.gethostbyaddr(ip)[0]
-        except (socket.herror, socket.gaierror):
+        online = check_host_status(ip)
+        if online:
+            status = f"{GREEN}Online{RESET}"
+            try:
+                hostname = socket.gethostbyaddr(ip)[0]
+            except (socket.herror, socket.gaierror):
+                hostname = "N/A"
+            online_hosts.append((ip, hostname))
+        else:
+            status = f"{RED}Offline{RESET}"
             hostname = "N/A"
+            offline_hosts.append(ip)
+
         os_info = platform.system()
-        print(f"IP: {ip}, Hostname: {hostname}, OS: {os_info}")
         progress += 1
         percent = (progress / total_ips)
         display_progress_bar(percent)
+
+    print("\n\nOnline hosts:")
+    for host in online_hosts:
+        print(f"IP: {host[0]}, Hostname: {host[1]}")
+
+    print("\nOffline hosts:")
+    for host in offline_hosts:
+        print(f"IP: {host}, Status: Offline")
+
 
 def get_user_input_network_scaner():
     subnet = input("Enter the subnet (e.g., 192.168.1): ")
@@ -1949,13 +2009,13 @@ def clear_screen():
 def main():
     clear_screen()
     while True:
-        # print(Fore.GREEN+"db   db  .d8b.  d8b   db d8888b. db    db      d888888b  .d88b.   .d88b.  db      .d8888. ")
-        # print(Fore.GREEN+"88   88 d8' `8b 888o  88 88  `8D `8b  d8'      `~~88~~' .8P  Y8. .8P  Y8. 88      88'  YP ")
-        # print(Fore.GREEN+"88ooo88 88ooo88 88V8o 88 88   88  `8bd8'          88    88    88 88    88 88      `8bo.   ")
-        # print(Fore.GREEN+"88~~~88 88~~~88 88 V8o88 88   88    88            88    88    88 88    88 88        `Y8b. ")
-        # print(Fore.GREEN+"88   88 88   88 88  V888 88  .8D    88            88    `8b  d8' `8b  d8' 88booo. db   8D ")
-        # print(Fore.GREEN+"YP   YP YP   YP VP   V8P Y8888D'    YP            YP     `Y88P'   `Y88P'  Y88888P `8888Y' ")
-        # # print(Fore.RED+"By HamidReza")
+        print(Fore.GREEN+"db   db  .d8b.  d8b   db d8888b. db    db      d888888b  .d88b.   .d88b.  db      .d8888. ")
+        print(Fore.GREEN+"88   88 d8' `8b 888o  88 88  `8D `8b  d8'      `~~88~~' .8P  Y8. .8P  Y8. 88      88'  YP ")
+        print(Fore.GREEN+"88ooo88 88ooo88 88V8o 88 88   88  `8bd8'          88    88    88 88    88 88      `8bo.   ")
+        print(Fore.GREEN+"88~~~88 88~~~88 88 V8o88 88   88    88            88    88    88 88    88 88        `Y8b. ")
+        print(Fore.GREEN+"88   88 88   88 88  V888 88  .8D    88            88    `8b  d8' `8b  d8' 88booo. db   8D ")
+        print(Fore.GREEN+"YP   YP YP   YP VP   V8P Y8888D'    YP            YP     `Y88P'   `Y88P'  Y88888P `8888Y' ")
+        print(Fore.RED+"By HamidReza")
         print(Style.RESET_ALL + Fore.RED + "\nMain Menu:")
         print(Fore.WHITE + "1. Folder Tools")
         print("2. File Tools")
@@ -1987,15 +2047,15 @@ def main():
 
 def ldap_login(username, password):
     # Modify the LDAP server details accordingly
-    ldap_server = Server('ldap://dc-1.tvedc.local:389', get_info=ALL)
+    ldap_server = Server('ldap://ldap:port', get_info=ALL)
     # Replace the base_dn with your LDAP base DN
-    base_dn = 'OU=Tvedc.local,DC=tvedc,DC=local'
+    base_dn = 'OU=X,,DC=X'
     # Replace the search_filter with your LDAP search filter
     search_filter = '(sAMAccountName={})'.format(username)
 
     try:
         # Attempt to bind to the LDAP server
-        conn = Connection(ldap_server, user='{}@tvedc.local'.format(username), password=password, authentication=SIMPLE)
+        conn = Connection(ldap_server, user='{}@X.local'.format(username), password=password, authentication=SIMPLE)
         if not conn.bind():
             print(Fore.RED + "LDAP login failed: Invalid credentials")
             return False
