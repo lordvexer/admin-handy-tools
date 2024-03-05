@@ -4,6 +4,8 @@
 For Network Admins And Help Desks
 Must Features Work in both OS (WIN/Linux)
 
+Master User and Pass is "a"
+
 ## Features
 
 ### Folder Tools
