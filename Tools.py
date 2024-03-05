@@ -1868,15 +1868,15 @@ def get_hostname_from_ip(ip_address):
         return None
 
 def get_user_by_computer_name(computer_name):
-    server = Server('ldap://dc-1.tvedc.local:389')
-    with Connection(server, user='finder', password='Aa@123456') as conn:
+    server = Server('ldap://ldap:port')
+    with Connection(server, user='X', password='X') as conn: # Update with your domain information
         try:
             if not conn.bind():
                 print("LDAP bind failed. Check username and password.")
                 return []
 
             conn.search(
-                search_base='OU=Tvedc.local,DC=tvedc,DC=local',  # Update with your domain information
+                search_base='OU=X.local,DC=X,DC=local',  # Update with your domain information
                 search_filter=f'(&(objectCategory=computer)(sAMAccountName={computer_name}$))',
                 attributes=['memberOf'],
                 search_scope=SUBTREE
@@ -1885,7 +1885,7 @@ def get_user_by_computer_name(computer_name):
             if response:
                 computer_dn = response[0]['dn']
                 conn.search(
-                    search_base='OU=Tvedc.local,DC=tvedc,DC=local',  # Update with your domain information
+                    search_base='OU=X.local,DC=X,DC=local',  # Update with your domain information
                     search_filter=f'(&(objectCategory=person)(objectClass=user)(memberOf={computer_dn}))',
                     attributes=['sAMAccountName'],
                     search_scope=SUBTREE
