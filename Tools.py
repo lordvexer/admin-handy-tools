@@ -1,64 +1,92 @@
 import os
-import platform
 import subprocess
 import sys
+import importlib
+import platform
 import logging
-
-# Function to check and install packages
-def check_and_install(package):
-    try:
-        __import__(package)
-    except ImportError:
-        print(f"{package} not found. Installing...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-# List of required packages
-required_packages = [
-    "pywin32",
-    "colorama",
-    "Pillow",
-    "psutil",
-    "windows-curses",  # Assuming you need this for Windows
-    "moviepy",
-    "cryptography",
-    "tqdm",
-    "speedtest-cli",
-    "iperf3"
-]
-
-# Install required packages if not already installed
-# for package in required_packages:
-#     check_and_install(package)
-
-# Now import your modules
-from ldap3 import Server, Connection, SIMPLE, SYNC, ALL,ALL_ATTRIBUTES, ALL_OPERATIONAL_ATTRIBUTES, SUBTREE
-from PIL import Image
-from colorama import Fore, Style, init
-from moviepy.editor import VideoFileClip
-from cryptography.fernet import Fernet
-import getpass
-import shutil
-import hashlib
-import traceback
-import uuid
-import string
-import random
-import datetime
-import zipfile
 import psutil
-import curses
-import time
-import socket
-import threading
-import ctypes
-import win32api
-import winreg
-import msvcrt 
-import speedtest
-import iperf3
-import re
-import patoolib
-import rarfile
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# def check_and_install(packages):
+#     # Ensure pip is up-to-date
+#     subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
+    
+#     for package, import_name in packages:
+#         try:
+#             importlib.import_module(import_name)
+#             logging.info(f"{package} is already installed.")
+#         except ImportError:
+#             logging.info(f"{package} not found. Installing...")
+#             try:
+#                 subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+#                 logging.info(f"Successfully installed {package}.")
+#             except subprocess.CalledProcessError as e:
+#                 logging.error(f"Failed to install {package}. Error: {e}")
+
+# required_packages = [
+#     ("pySMART", "pySMART.smart"),
+#     ("psutil", "psutil"),
+#     ("pywin32", "win32api"),
+#     ("colorama", "colorama"),
+#     ("Pillow", "PIL"),
+#     ("windows-curses", "curses"),
+#     ("moviepy", "moviepy"),
+#     ("cryptography", "cryptography"),
+#     ("tqdm", "tqdm"),
+#     ("speedtest-cli", "speedtest"),
+#     ("iperf3", "iperf3"),
+#     ("pyad", "pyad"),
+#     ("ldap3", "ldap3") 
+# ]
+# check_and_install(required_packages)
+
+try:
+    from colorama import Fore, Style, init as colorama_init
+    import psutil
+    from tqdm import tqdm
+    from ldap3 import Server, Connection, SIMPLE, SYNC, ALL, ALL_ATTRIBUTES, ALL_OPERATIONAL_ATTRIBUTES, SUBTREE
+    from PIL import Image
+    from moviepy.editor import VideoFileClip, ImageClip
+    import moviepy.editor as mp
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    import base64
+    from zipfile import ZipFile, ZIP_DEFLATED
+    from pyad import aduser
+    import getpass
+    import shutil
+    import hashlib
+    import traceback
+    import uuid
+    import string
+    import tarfile
+    import random
+    import datetime
+    import curses
+    import time
+    import socket
+    import threading
+    import ctypes
+    import win32api
+    import zipfile
+    import winreg
+    import msvcrt
+    import speedtest
+    import iperf3
+    import re
+    import pyAesCrypt
+    import rarfile
+    from pySMART.smart import SmartCtrl
+except ImportError as e:
+    logging.error(f"Failed to import module: {e}")
+    print(f"Failed to import module: {e}")
+
+
+
 
 
 
@@ -68,12 +96,12 @@ import rarfile
 def folder_tools():
     clear_screen()
     print(Fore.RED + "\nFolder Tools Menu:")
-    print("1. List contents of a folder")
+    print(Fore.WHITE+"1. List contents of a folder")
     print("2. Create a new folder")
     print("3. Delete folder(s)")
     print("4. Show information of a folder")
     print("5. Search for a File and Folders")
-    print("6. Copy files")
+    print("6. Copy Or Move files & Folders")
     print("7. Rename files or folders")
     print("8. Compress folder")
     print("9. Find duplicates")
@@ -120,21 +148,22 @@ def folder_tools():
             else:    
                 search_for_file(folder_path, file_name)
     elif choice == '6':
-        source_path = input("Enter the path of the source folder: ")
-        destination_path = input("Enter the path of the destination folder: ")
-        copy_or_move_files(source_path, destination_path)
+        source_path = input("Enter the source path: ")
+        destination_path = input("Enter the destination path: ")
+        operation = input("Enter the operation (copy/move): ")
+        copy_or_move_files(source_path, destination_path, operation)
+
     elif choice == '7':
-        old_name = input("Enter the current name of the file or folder: ")
-        new_name = input("Enter the new name: ")
-        rename_file_or_folder(old_name, new_name)
+        rename_file_or_folder_base()
     elif choice == '8':
-        folder_path = input("Enter the path of the folder to compress: ")
-        compress_path = input("Enter the path to Save compress File: ")
-        compress_format=input("Enter Compress Format(zip, rar, tar, gz, bz2, xz):")
-        compress_level=input("Enter Compress LEVEL(0-9)(except: rar > 0-5 and tar > blank):")
-        split_on_size=input("Enter Size Of You Need To Splite(MB):")
-        compress_password=input("If You Need Set Password Enter It(Or Not Leave Blank):")
-        compress_folder(folder_path,compress_format,compress_level,split_on_size,compress_password,compress_path)
+        folder_path = input("Enter the folder path to compress: ")
+        compress_format = input("Enter the compression format (zip, rar, tar, gz, bz2, xz): ")
+        destination_path = input("Enter the destination path: ")
+        compress_level = input("Enter the compression level (1-9, optional): ")
+        compress_level_str = str(compress_level) if compress_level is not None else None
+        compress_password = input("Enter the compression password (optional): ")
+        compress_password = compress_password if compress_password else None
+        compress_folder(folder_path, compress_format, destination_path, compress_level_str, compress_password=compress_password)
     elif choice == '9':
         folder_path = input("Enter the path of the folder to search for duplicates: ")
         find_duplicates(folder_path)
@@ -173,8 +202,9 @@ def delete_folders():
         delete_all_folders(folder_path)
     elif choice == '3':
         folder_path=input("Enter Path:")
-        folder_names = input("Enter the name(s) of the folder(s) to delete (separated by commas): ")
-        delete_folders_by_name(folder_names,folder_path)
+        folder_names_input = input("Enter the name(s) of the folder(s) to delete (separated by commas): ")
+        folder_names = [name.strip() for name in folder_names_input.split(',')]
+        delete_folders_by_name(folder_names, folder_path)
     elif choice == '0':
          folder_tools()
     else:
@@ -253,15 +283,15 @@ def delete_all_folders(folder_path):
         print(f"{Fore.YELLOW}Directory not found!")
 
 def delete_folders_by_name(folder_names, folder_path):
-    try:
-        for name in folder_names:
-            full_path = os.path.join(folder_path, name.strip())
+    for fname in folder_names:
+        try:
+            full_path = os.path.join(folder_path, fname.strip())
             shutil.rmtree(full_path)
-            print(f"{Fore.GREEN}Folder '{name.strip()}' deleted successfully.")
-    except FileNotFoundError:
-        print(f"{Fore.YELLOW}Folder '{name.strip()}' not found!")
-    except Exception as e:
-        print(f"{Fore.RED}An error occurred while deleting folder '{name.strip()}': {e}")
+            print(f"{Fore.GREEN}Folder '{fname.strip()}' deleted successfully.")
+        except FileNotFoundError:
+            print(f"{Fore.YELLOW}Folder '{fname.strip()}' not found!")
+        except Exception as e:
+            print(f"{Fore.RED}An error occurred while deleting folder '{fname.strip()}': {e}")
 
 
 def show_folder_info(folder_path):
@@ -344,7 +374,7 @@ def file_tools():
     print(Fore.RED + "\nFile Tools Menu:")
     print(Fore.YELLOW + "1. File Information")
     print("2. File Operations")
-    print("3. File Comparison")
+    print("3. File Compare")
     print("4. Search File and Folders")
     print("5. File Compress")
     print("6. File DeCompress")
@@ -365,20 +395,29 @@ def file_tools():
     elif choice == '3':
         file1_path = input("Enter the path of the first file: ")
         file2_path = input("Enter the path of the second file: ")
-        compare_files(file1_path, file2_path)
+        comparison_result = compare_files(file1_path, file2_path)
+        print(comparison_result)
     elif choice == '4':
         folder_path = input("Enter the path of the folder to search in: ")
         file_name = input("Enter the name of the file to search for: ")
         search_for_file(folder_path, file_name)
     elif choice == '5':
-        file_path = input("Enter the path of the file to compress: ")
-        compress_file(file_path)        
+        folder_path = input("Enter the folder path to compress: ")
+        compress_format = input("Enter the compression format (zip, rar, tar, gz, bz2, xz): ")
+        destination_path = input("Enter the destination path: ")
+        compress_level = input("Enter the compression level (1-9, optional): ")
+        compress_level_str = str(compress_level) if compress_level is not None else None
+        compress_password = input("Enter the compression password (optional): ")
+        compress_password = compress_password if compress_password else None
+        compress_folder(folder_path, compress_format, destination_path, compress_level_str, compress_password=compress_password)
     elif choice == '6':
         file_path = input("Enter the path of the file to decompress: ")
-        decompress_file(file_path)        
+        destination_path = input("Enter the destination directory to extract to: ")
+        decompress_file(file_path, extract_to=destination_path)       
     elif choice == '7':
         file_path = input("Enter the path of the file to encrypt: ")
-        encrypt_file(file_path) 
+        passphrase = input("Enter your passphrase: ")
+        encrypt_file(file_path,passphrase) 
     elif choice == '8':
         encrypted_file_path = input("Enter the path of the file to decrypt: ")
         key = input("Enter the decryption key: ")
@@ -438,15 +477,26 @@ def conversion_tools():
 
     if choice == '1':
         input_path = input("Enter the path of the input photo: ")
-        output_path = input("Enter the full path of the output photo (including file name and extension): ")
-        convert_photo(input_path, output_path)
+        output_folder = input("Enter the folder path where you want to save the output photos: ")
+        output_formats = input("Choose Your Format ('jpg', 'jpeg', 'png', 'bmp', 'webp', 'gif', 'heif', 'svg'), separated by commas: ").split(',')
+        codec = input("Choose Your Codec (jpg': 'libjpeg', 'jpeg': 'libjpeg', 'png': 'png', 'bmp': 'bmp', 'webp': 'webp', 'gif': 'gif', 'heif': 'hevc', 'svg' OR None): ")
+        
+        convert_photo(input_path, output_folder, output_formats, codec)
+        
+
     elif choice == '2':
         input_path = input("Enter the path of the input video: ")
-        output_path = input("Enter the full path of the output video (including file name and extension): ")
-        output_format = input("Available output formats for videos: ['mp4', 'avi', 'mov', 'mkv']\nEnter the desired output format: ")
-        bitrate_input = input("Enter the desired bitrate (in bits per second), or leave empty for default bitrate: ")
-        bitrate = int(bitrate_input) if bitrate_input else None
-        convert_video(input_path, output_path, output_format, bitrate)
+        output_folder = input("Enter the folder path where you want to save the output video: ")
+        print("Available output formats for videos:", video_formats)
+        output_format = input("Enter the desired output format: ")
+        output_filename = input("Enter the filename for the output video (without extension): ")
+        output_path = f"{output_folder}\\{output_filename}.{output_format}"
+        bitrate = input("Enter the desired bitrate (in bits per second), or leave empty for default bitrate (1000): ")
+        codec = input(f"Available codecs for {output_format}: {video_codecs.get(output_format.lower())}\nEnter the desired Codec or leave empty for default codec: ")
+
+        convert_video(input_path, output_path, output_format, codec, bitrate)
+
+
     elif choice == '0':
         conversion_tools()
     else:
@@ -520,15 +570,131 @@ def search_for_file(folder_path, search_query):
         
         
 
-def copy_or_move_files(source_path, destination_path):
-    shutil.copytree(source_path, destination_path)
-    print("Files copied successfully!")
+
+def copy_or_move_files(source_path, destination_path, operation="copy"):
+    try:
+        if os.path.isdir(source_path):
+            if os.path.exists(destination_path):
+                if not os.path.isdir(destination_path):
+                    print(f"Error: Destination '{destination_path}' is not a directory.")
+                    return
+                if operation.lower() == "copy":
+                    for item in os.listdir(source_path):
+                        src_item = os.path.join(source_path, item)
+                        dest_item = os.path.join(destination_path, item)
+                        if os.path.isdir(src_item):
+                            shutil.copytree(src_item, dest_item, dirs_exist_ok=True)
+                        else:
+                            shutil.copy2(src_item, dest_item)
+                    print("Files and directories copied successfully!")
+                elif operation.lower() == "move":
+                    for item in os.listdir(source_path):
+                        src_item = os.path.join(source_path, item)
+                        dest_item = os.path.join(destination_path, item)
+                        shutil.move(src_item, dest_item)
+                    print("Files and directories moved successfully!")
+                else:
+                    print("Invalid operation. Please specify 'copy' or 'move'.")
+            else:
+                if operation.lower() == "copy":
+                    shutil.copytree(source_path, destination_path)
+                    print("Files and directories copied successfully!")
+                elif operation.lower() == "move":
+                    shutil.move(source_path, destination_path)
+                    print("Files and directories moved successfully!")
+                else:
+                    print("Invalid operation. Please specify 'copy' or 'move'.")
+        else:
+            if os.path.exists(destination_path):
+                if os.path.isdir(destination_path):
+                    dest_item = os.path.join(destination_path, os.path.basename(source_path))
+                    if operation.lower() == "copy":
+                        shutil.copy2(source_path, dest_item)
+                        print("File copied successfully!")
+                    elif operation.lower() == "move":
+                        shutil.move(source_path, dest_item)
+                        print("File moved successfully!")
+                    else:
+                        print("Invalid operation. Please specify 'copy' or 'move'.")
+                else:
+                    print(f"Error: Destination '{destination_path}' is a file.")
+            else:
+                if operation.lower() == "copy":
+                    shutil.copy2(source_path, destination_path)
+                    print("File copied successfully!")
+                elif operation.lower() == "move":
+                    shutil.move(source_path, destination_path)
+                    print("File moved successfully!")
+                else:
+                    print("Invalid operation. Please specify 'copy' or 'move'.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+def rename_file_or_folder_base():
+    path = input("Enter the directory path: ")
+
+    items = list_files_and_folders(path)
+    if not items:
+        print(f"{Fore.RED}No items to rename in the directory '{path}'.")
+        exit(1)
+
+    try:
+        selected_index = int(input("Enter the number of the item to rename: ")) - 1
+        if selected_index < 0 or selected_index >= len(items):
+            print(f"{Fore.RED}Invalid selection.")
+            exit(1)
+
+        old_name = os.path.join(path, items[selected_index])
+        new_name = input("Enter the new name: ")
+        new_name = os.path.join(path, new_name)
+
+        rename_file_or_folder(old_name, new_name)
+    except ValueError:
+        print(f"{Fore.RED}Invalid input. Please enter a valid number.")
+    except Exception as e:
+        print(f"{Fore.RED}An error occurred: {e}")
 
 def rename_file_or_folder(old_name, new_name):
-    os.rename(old_name, new_name)
-    print(f"{Fore.GREEN}Renamed successfully.")
+    try:
+        if not os.path.exists(old_name):
+            print(f"{Fore.RED}Error: '{old_name}' does not exist.")
+            return
 
-def compress_folder(folder_path, compress_format, compress_level, split_on_size, compress_password):
+        if os.path.exists(new_name):
+            print(f"{Fore.YELLOW}Warning: '{new_name}' already exists.")
+            return
+
+        os.rename(old_name, new_name)
+        print(f"{Fore.GREEN}Renamed '{old_name}' to '{new_name}' successfully.")
+    except Exception as e:
+        print(f"{Fore.RED}An error occurred: {e}")
+
+def list_files_and_folders(path):
+    try:
+        items = os.listdir(path)
+        if not items:
+            print(f"{Fore.YELLOW}The directory '{path}' is empty.")
+            return []
+
+        print(f"{Fore.CYAN}Contents of '{path}':")
+        for index, item in enumerate(items, start=1):
+            print(f"{index}. {item}")
+        return items
+    except FileNotFoundError:
+        print(f"{Fore.RED}Error: The directory '{path}' does not exist.")
+        return []
+    except PermissionError:
+        print(f"{Fore.RED}Error: Permission denied to access '{path}'.")
+        return []
+    except Exception as e:
+        print(f"{Fore.RED}An error occurred: {e}")
+        return []
+
+
+
+
+def compress_folder(folder_path, compress_format, destination_path, compress_level=None, compress_password=None):
     try:
         # Check if the compression format is supported
         supported_formats = ['zip', 'rar', 'tar', 'gz', 'bz2', 'xz']
@@ -537,22 +703,73 @@ def compress_folder(folder_path, compress_format, compress_level, split_on_size,
 
         # Construct the archive name
         base_name = os.path.basename(folder_path)
-        archive_name = f"{folder_path}.{compress_format}"
+        archive_name = os.path.join(destination_path, f"{base_name}.{compress_format}")
 
         # Compress the folder
         if compress_format == 'zip':
-            shutil.make_archive(archive_name, 'zip', folder_path)
+            compress_zip(folder_path, archive_name, compress_level, compress_password)
         elif compress_format == 'rar':
-            raise NotImplementedError("RAR compression is not yet supported.")
+            compress_rar(folder_path, archive_name, compress_password)
         else:
-            raise NotImplementedError(f"Compression format '{compress_format}' is not supported yet.")
-
-        print(f"{Fore.GREEN}Folder compressed successfully.")
+            compress_tar(folder_path, archive_name, compress_format)
+        
+        print(f"{Fore.GREEN}Folder compressed successfully to {archive_name}.")
     except Exception as e:
         print(f"{Fore.RED}Error: {e}")
 
+def compress_zip(folder_path, archive_name, compress_level, compress_password):
+    with ZipFile(archive_name, 'w', ZIP_DEFLATED) as zipf:
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, start=folder_path)
+                zipf.write(file_path, arcname=arcname)
 
-        
+
+def compress_rar(folder_path, archive_name, compress_password):
+    try:
+        patoolib.create_archive(archive_name, folder_path, verbosity=-1, program="rar", password=compress_password)
+    except Exception as e:
+        raise RuntimeError(f"RAR compression error: {e}")
+
+
+def compress_tar(folder_path, archive_name, compress_format):
+    mode = 'w:' + compress_format if compress_format in ['gz', 'bz2', 'xz'] else 'w'
+    with tarfile.open(archive_name, mode) as tar:
+        tar.add(folder_path, arcname=os.path.basename(folder_path))
+
+def decompress_file(file_path, extract_to=None):
+    try:
+        if not extract_to:
+            extract_to = os.path.dirname(file_path)
+
+        # Create the destination directory if it doesn't exist
+        os.makedirs(extract_to, exist_ok=True)
+
+        # Check the file extension
+        file_extension = os.path.splitext(file_path)[1].lower()
+
+        if file_extension == '.zip':
+            with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                zip_ref.extractall(extract_to)
+        elif file_extension == '.rar':
+            patoolib.extract_archive(file_path, outdir=extract_to)
+        elif file_extension == '.tar':
+            with tarfile.open(file_path, 'r') as tar_ref:
+                tar_ref.extractall(extract_to)
+        elif file_extension in ('.gz', '.bz2', '.xz'):
+            with tarfile.open(file_path, f'r:{file_extension[1:]}') as tar_ref:
+                tar_ref.extractall(extract_to)
+        else:
+            print(f"Unsupported file format: {file_extension}")
+            return False
+
+        print(f"File decompressed successfully to: {extract_to}")
+        return True
+    except Exception as e:
+        print(f"An error occurred during decompression: {e}")
+        return False
+    
 
 def find_duplicates(folder_path):
     hash_map = {}
@@ -574,13 +791,22 @@ def find_duplicates(folder_path):
             print(f"Original file: {duplicate[1]}")
         choice = input("Do you want to delete the original files? (yes/no): ")
         if choice.lower() == 'yes':
-            for duplicate in duplicates:
-                os.remove(duplicate[1])
-                print(f"Original file '{duplicate[1]}' deleted.")
+         for duplicate in duplicates:
+            original_file = duplicate[1]
+            if os.path.exists(original_file):
+                os.remove(original_file)
+                print(f"Original file '{original_file}' deleted.")
+            else:
+                print(f"Original file '{original_file}' does not exist.")
         else:
             for duplicate in duplicates:
-                os.remove(duplicate[0])
-                print(f"Duplicate file '{duplicate[0]}' deleted.")
+                duplicate_file = duplicate[0]
+                if os.path.exists(duplicate_file):
+                    os.remove(duplicate_file)
+                    print(f"Duplicate file '{duplicate_file}' deleted.")
+                else:
+                    print(f"Duplicate file '{duplicate_file}' does not exist.")
+
     else:
         print("No duplicates found.")
 
@@ -710,7 +936,13 @@ def compare_folders():
 
 def create_symbolic_link(source_path, link_path):
     try:
-        os.symlink(source_path, link_path)
+        # Check the operating system
+        if platform.system() == "Windows":
+            # On Windows, use the mklink command to create symbolic links
+            os.system(f"mklink /D {link_path} {source_path}")
+        else:
+            # On Unix-like systems, use os.symlink
+            os.symlink(source_path, link_path)
         print(f"{Fore.GREEN}Symbolic link created successfully.")
     except FileExistsError:
         print(f"{Fore.YELLOW}Symbolic link already exists!")
@@ -718,6 +950,8 @@ def create_symbolic_link(source_path, link_path):
         print(f"{Fore.YELLOW}Source path not found!")
     except Exception as e:
         print(f"{Fore.RED}An error occurred while creating symbolic link: {e}")
+
+
 def copy_file(source_path, destination_path):
     try:
         shutil.copy2(source_path, destination_path)
@@ -757,66 +991,76 @@ def delete_file(file_path):
 
 def compare_files(file1_path, file2_path):
     try:
-        # Read the contents of the files
-        with open(file1_path, 'r') as file1, open(file2_path, 'r') as file2:
-            content1 = file1.read()
-            content2 = file2.read()
+        # Get file size
+        file1_size = os.path.getsize(file1_path)
+        file2_size = os.path.getsize(file2_path)
 
-        # Compare the contents
-        if content1 == content2:
-            print("The files are identical.")
-        else:
-            print("The files are different.")
-    except FileNotFoundError:
-        print("One or both files not found!")
+        # Get last modified time
+        file1_modified = os.path.getmtime(file1_path)
+        file2_modified = os.path.getmtime(file2_path)
+
+        # Calculate file hashes
+        file1_hash = hash_file_compare(file1_path)
+        file2_hash = hash_file_compare(file2_path)
+
+        # Compare file size
+        size_match = file1_size == file2_size
+
+        # Compare last modified time
+        modified_match = file1_modified == file2_modified
+
+        # Compare file content hashes
+        content_match = file1_hash == file2_hash
+
+        return {
+            "size_match": size_match,
+            "modified_match": modified_match,
+            "content_match": content_match
+        }
+    except FileNotFoundError as e:
+        return {"error": str(e)}
     except Exception as e:
-        print(f"An error occurred: {e}")
-def compress_file(file_path):
-    try:
-        with zipfile.ZipFile(file_path + '.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:
-            zipf.write(file_path, os.path.basename(file_path))
-        print("File compressed successfully.")
-    except FileNotFoundError:
-        print("File not found!")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+        return {"error": f"An error occurred: {e}"}
 
-def decompress_file(file_path):
-    try:
-        with zipfile.ZipFile(file_path, 'r') as zipf:
-            zipf.extractall(os.path.dirname(file_path))
-        print("File decompressed successfully.")
-    except FileNotFoundError:
-        print("File not found!")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-def encrypt_file(file_path, key):
-    try:
-        cipher = Fernet(key)
-
-        with open(file_path, 'rb') as f:
-            plaintext = f.read()
-
-        encrypted_text = cipher.encrypt(plaintext)
-
-        with open(file_path + '.enc', 'wb') as f:
-            f.write(encrypted_text)
-
-        print("File encrypted successfully.")
-    except FileNotFoundError:
-        print("File not found!")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+def hash_file_compare(file_path):
+    # Calculate the MD5 hash of a file
+    with open(file_path, 'rb') as f:
+        hash_object = hashlib.md5()
+        while chunk := f.read(4096):
+            hash_object.update(chunk)
+        return hash_object.hexdigest()
 
 
-def generate_key():
-    """Generate a random Fernet key."""
-    return Fernet.generate_key().decode()
 
-def encrypt_file(file_path):
+def generate_key(passphrase):
+    # Generate a random salt
+    salt = os.urandom(16)
+
+    # Derive a key from the passphrase using PBKDF2
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,  # Adjust the number of iterations as needed
+        backend=default_backend()
+    )
+    derived_key = kdf.derive(passphrase.encode())
+
+    # Generate a random key
+    random_key = Fernet.generate_key()
+
+    # Combine the random key and derived key using XOR
+    combined_key = bytes(a ^ b for a, b in zip(random_key, derived_key))
+
+    # Encode the combined key in base64
+    encoded_key = base64.urlsafe_b64encode(combined_key)
+
+    return encoded_key.decode()
+
+def encrypt_file(file_path,passphrase):
     try:
         # Generate a random key
-        key = generate_key()
+        key = generate_key(passphrase)
         cipher = Fernet(key.encode())
 
         with open(file_path, 'rb') as f:
@@ -870,7 +1114,7 @@ def decrypt_file(encrypted_file_path, key):
         print("An error occurred during decryption:")
         print(traceback.format_exc())
 
-def hash_file(file_path, algorithm='sha256'):
+def hash_file_decrypt(file_path, algorithm='sha256'):
     try:
         # Create a hash object based on the specified algorithm
         hasher = hashlib.new(algorithm)
@@ -890,39 +1134,81 @@ def hash_file(file_path, algorithm='sha256'):
         print(f"An error occurred: {e}")
         return None
 
-# Supported input and output formats for videos
-video_formats = ['mp4', 'avi', 'mov', 'mkv']
-video_codecs = ['libx264', 'libvpx', 'mpeg4']
+
 
 # Supported input and output formats for pictures
-picture_formats = ['jpg', 'jpeg', 'png', 'bmp']
-picture_codecs = ['libjpeg', 'png']
+picture_formats = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'gif', 'heif', 'svg']
+picture_codecs = {'jpg': 'libjpeg', 'jpeg': 'libjpeg', 'png': 'png', 'bmp': 'bmp', 'webp': 'webp', 'gif': 'gif', 'heif': 'hevc', 'svg': None}
 
-def convert_photo(input_path, output_path, output_format, codec, compress_output):
+def convert_photo(input_path, output_folder, output_formats, codec):
     try:
-        clip = mp.ImageClip(input_path)
-        clip.write_videofile(output_path, codec=codec, fps=1)
-        
-        if compress_output.lower() == "yes":
-            compress_file(output_path)
-        
-        print("Photo conversion successful!")
+        # Open the input image
+        if input_path.lower().endswith('.heic') or input_path.lower().endswith('.heif'):
+            heif_image = pyheif.read(input_path)
+            image = Image.frombytes(
+                heif_image.mode, 
+                heif_image.size, 
+                heif_image.data,
+                "raw",
+                heif_image.mode,
+                heif_image.stride,
+            )
+        else:
+            image = Image.open(input_path)
+
+        # Create the output folder if it doesn't exist
+        os.makedirs(output_folder, exist_ok=True)
+
+        for output_format in output_formats:
+            # Construct the output file path
+            output_filename = os.path.splitext(os.path.basename(input_path))[0]
+            output_path = os.path.join(output_folder, f"{output_filename}.{output_format}")
+
+            # Save the image to the output file with the specified format
+            image.save(output_path, format=output_format)
+
+            print(f"Photo converted to {output_format.upper()} format successfully!")
+
+           
+
     except Exception as e:
         print("An error occurred during photo conversion:", e)
 
 
+# Supported input and output formats for videos
+video_formats = ['mp4', 'avi', 'mov', 'mkv']
+video_codecs = {
+    'mp4': ['libx264', 'libx265'], 
+    'avi': ['mpeg4'], 
+    'mov': ['libx264', 'libx265'], 
+    'mkv': ['libvpx'], 
+    'h266': ['libx265']  
+}
 
-def convert_video(input_path, output_path, output_format, bitrate=None):
+def convert_video(input_path, output_path, output_format, codec=None, bitrate=None):
     try:
+        # Validate the output format
+        if output_format.lower() not in video_codecs:
+            raise ValueError(f"Unsupported output format: {output_format}")
+
+        # Load the video clip
         clip = mp.VideoFileClip(input_path)
-        if bitrate:
-            clip.write_videofile(output_path, codec='libx264', audio_codec='aac', bitrate=f"{bitrate}k")
+
+        # Set the output codec based on the selected format
+        selected_codec = codec.lower() if codec else video_codecs[output_format.lower()][0]
+
+        # Configure bitrate if provided
+        bitrate_str = f"{bitrate}k" if bitrate else None
+
+        # Write the video clip to the output file with the specified format and codec
+        if bitrate_str:
+            clip.write_videofile(output_path, codec=selected_codec, audio_codec='aac', bitrate=bitrate_str)
         else:
-            clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
+            clip.write_videofile(output_path, codec=selected_codec, audio_codec='aac')
+
         print("Video conversion successful!")
     except Exception as e:
         print("An error occurred during video conversion:", e)
-
 
 ##################################### ADMIN TOOLS #####################################
 
@@ -935,10 +1221,11 @@ def admin_tools():
     print(Fore.YELLOW +"1. Show System Users")
     print("2. Show System Users With Passswords")
     print("3. Add user(s)")
-    print("4. Remove user(s)")
-    print("5. Remove Keyboard(s)")
-    print("6. Driver Status")
-    print("7. Run App On Remote")
+    print("4. Domain user(s) Management")
+    print("5. Remove user(s)")
+    print("6. Remove Keyboard(s)")
+    print("7. Driver Status")
+    print("8. Run App On Remote")
     print("0. Back")
 
     choice = input("Enter your choice: ")
@@ -964,6 +1251,27 @@ def admin_tools():
          else:
             add_multiple_users(usernumber)
     elif choice == '4':
+            clear_screen()
+            print(Fore.RED+"\nChoose Your Options:")
+            print("1. Add User")
+            print("2. Delete User")
+            print("3. Add Computer")
+            print("4. Remove Computer")
+            print("5. Reset Password")
+            choice=input('Enter your choice: ')
+            if choice=='1':
+                domain_add_user()
+            elif choice=='2':
+                domain_remove_user()
+            elif choice=='3':
+                domain_add_computer()
+            elif choice=='4':
+                domain_remove_computer()
+            elif choice=='5':
+                domain_reset_user_password
+            else:
+                print(Fore.RED+'Wrong Choice!!')
+    elif choice == '5':
             print(Fore.RED+"\nChoose Your Options:")
             print(Fore.YELLOW +"1. Delete Special User")
             print("2. Delete All Users")
@@ -976,7 +1284,7 @@ def admin_tools():
                 print("Deleted users:", deleted_users)
             else:
                 print(Fore.RED+'Wrong Choice!!')
-    elif choice == '5':
+    elif choice == '6':
         layouts = list_keyboard_layouts()
         print("List of keyboard layout IDs:")
         for i, layout_id in enumerate(layouts):
@@ -1002,9 +1310,9 @@ def admin_tools():
                 print("Invalid choice.")
         else:
             print("Invalid input. Please enter a number.")
-    elif choice == '6':
-            print(show_not_installed_drivers())
     elif choice == '7':
+            print(show_not_installed_drivers())
+    elif choice == '8':
             remote_pc_ip=input("Enter Target Ip Address:")
             app_path=app_selection()
             run_app_on_remote_pc(remote_pc_ip, app_path)
@@ -1299,43 +1607,96 @@ def display_processes():
     close_task_list()
         
 def display_hardware_usage():
-    clear_screen()
-    print("CPU Usage: {}%".format(psutil.cpu_percent(interval=1)))
-    print("Memory Usage: {}%".format(psutil.virtual_memory().percent))
+    print("Press any key to return to the menu.")
+    try:
+        while True:
+            
+            
+            clear_screen()
+            
+            # Display CPU usage
+            print("CPU Usage: {}%".format(psutil.cpu_percent(interval=1)))
+            
+            # Display memory usage
+            print("Memory Usage: {}%".format(psutil.virtual_memory().percent))
 
-    if platform.system() == 'Windows':
-        print("Disk Usage:")
-        for disk in psutil.disk_partitions():
-            try:
-                usage = psutil.disk_usage(disk.mountpoint)
-                print(f"{disk.device} - Total: {usage.total / (1024 ** 3):.2f} GB, "
-                      f"Used: {usage.used / (1024 ** 3):.2f} GB, "
-                      f"Free: {usage.free / (1024 ** 3):.2f} GB")
-            except PermissionError:
-                continue
-    elif platform.system() == 'Linux':
-        print("Disk Usage:")
-        disk_usage = psutil.disk_usage('/')
-        print(f"Total: {disk_usage.total / (1024 ** 3):.2f} GB, "
-              f"Used: {disk_usage.used / (1024 ** 3):.2f} GB, "
-              f"Free: {disk_usage.free / (1024 ** 3):.2f} GB")
+            # Display disk usage
+            print("Disk Usage:")
+            if platform.system() == 'Windows':
+                for disk in psutil.disk_partitions():
+                    if disk.fstype:  # Check if the partition has a filesystem type
+                        try:
+                            usage = psutil.disk_usage(disk.mountpoint)
+                            print(f"{disk.device} - Total: {usage.total / (1024 ** 3):.2f} GB, "
+                                  f"Used: {usage.used / (1024 ** 3):.2f} GB, "
+                                  f"Free: {usage.free / (1024 ** 3):.2f} GB")
+                        except PermissionError:
+                            continue
+            elif platform.system() == 'Linux':
+                disk_usage = psutil.disk_usage('/')
+                print(f"Total: {disk_usage.total / (1024 ** 3):.2f} GB, "
+                      f"Used: {disk_usage.used / (1024 ** 3):.2f} GB, "
+                      f"Free: {disk_usage.free / (1024 ** 3):.2f} GB")
+            
+            
+            time.sleep(5)
+    
+    except KeyboardInterrupt:
+        print("Live hardware usage monitoring stopped.")
+
+    clear_screen()
+    print("Returning to menu...")
+    monitor_tools()
+
         
+def get_device_model():
+    if platform.system() == 'Windows':
+        try:
+            import wmi
+            w = wmi.WMI()
+            for comp in w.Win32_ComputerSystem():
+                return comp.Model
+        except ImportError:
+            return "WMI module not installed"
+    elif platform.system() == 'Linux':
+        try:
+            with open('/sys/class/dmi/id/product_name') as f:
+                return f.read().strip()
+        except FileNotFoundError:
+            return "Model info not available"
+    elif platform.system() == 'Darwin':  # macOS
+        try:
+            return os.popen("sysctl -n hw.model").read().strip()
+        except Exception as e:
+            return str(e)
+    else:
+        return "Unsupported OS"
+
 def display_system_info():
     clear_screen()
+    
+    # System Information
     print("System Information:")
-    print(f"Operating System: {platform.system()} {platform.release()} {platform.version()}")
-    print(f"Machine: {platform.machine()}")
-    print(f"Processor: {platform.processor()}")
+    print(f"  Operating System: {platform.system()} {platform.release()} {platform.version()}")
+    print(f"  Machine: {platform.machine()}")
+    print(f"  Processor: {platform.processor()}")
+    print(f"  Device Model: {get_device_model()}")
+    
+    # CPU Usage
     print("\nCPU Usage:")
     print(f"  Cores: {psutil.cpu_count(logical=False)} (Physical)")
     print(f"  Threads: {psutil.cpu_count(logical=True)} (Logical)")
     print(f"  Usage: {psutil.cpu_percent(interval=1)}%")
+    
+    # Memory Usage
     print("\nMemory Usage:")
     memory = psutil.virtual_memory()
     print(f"  Total: {memory.total / (1024 ** 3):.2f} GB")
     print(f"  Available: {memory.available / (1024 ** 3):.2f} GB")
     print(f"  Used: {memory.used / (1024 ** 3):.2f} GB ({memory.percent}%)")
     print(f"  Free: {memory.free / (1024 ** 3):.2f} GB")
+    
+    # Disk Usage
     print("\nDisk Usage:")
     for partition in psutil.disk_partitions():
         try:
@@ -1346,14 +1707,27 @@ def display_system_info():
             print(f"    Used: {partition_usage.used / (1024 ** 3):.2f} GB ({partition_usage.percent}%)")
             print(f"    Free: {partition_usage.free / (1024 ** 3):.2f} GB")
         except PermissionError:
+            print(f"  Device: {partition.device}")
+            print("    Permission Denied")
             continue
+        except OSError as e:
+            print(f"  Device: {partition.device}")
+            print(f"    Error: {e}")
+            continue
+    
+    # Network Information
     print("\nNetwork Information:")
     print("  Network Interfaces:")
     for interface, addrs in psutil.net_if_addrs().items():
         print(f"    Interface: {interface}")
         for addr in addrs:
-            print(f"      {addr.family.name}: {addr.address}")
-            
+            if addr.family == socket.AF_LINK:
+                print(f"      MAC Address: {addr.address}")
+            elif addr.family == socket.AF_INET:
+                print(f"      IPv4 Address: {addr.address}")
+            elif addr.family == socket.AF_INET6:
+                print(f"      IPv6 Address: {addr.address}")
+
 
                
 def close_task_list():
@@ -1371,14 +1745,28 @@ def end_all_tasks():
     system = platform.system()
     if system == "Windows":
         try:
-            subprocess.run(["taskkill", "/F", "/FI", "USERNAME ne SYSTEM"])
-            print("All tasks terminated except system tasks.")
-        except subprocess.CalledProcessError:
-            print("Error: Failed to terminate tasks.")
+            # Get list of all processes and exclude critical ones
+            result = subprocess.run(["tasklist"], capture_output=True, text=True)
+            processes = result.stdout.splitlines()
+            
+            for process in processes:
+                if "System Idle Process" in process or "System" in process or "tasklist.exe" in process:
+                    continue
+                
+                process_name = process.split()[0]
+                try:
+                    subprocess.run(["taskkill", "/F", "/IM", process_name], check=True)
+                except subprocess.CalledProcessError:
+                    pass  # Continue killing other processes if one fails
+            print("All user tasks terminated, except system tasks.")
+        except Exception as e:
+            print(f"Error: {e}")
     elif system == "Linux":
         try:
-            subprocess.run(["sudo", "pkill", "-u", "$(whoami)"])
-            print("All tasks terminated except system tasks.")
+            # Get the current user's username
+            user = subprocess.run(["whoami"], capture_output=True, text=True).stdout.strip()
+            subprocess.run(["pkill", "-u", user], check=True)
+            print("All user tasks terminated, except system tasks.")
         except subprocess.CalledProcessError:
             print("Error: Failed to terminate tasks.")
     else:
@@ -1540,7 +1928,7 @@ def display_progress_bar(percent):
     progress = int(percent * bar_length)
     remaining = bar_length - progress
     bar = f"\033[32m{'█' * progress}\033[0m\033[31m{'-' * remaining}\033[0m"
-    print(f"Scanning : [{bar}] {int(percent * 100)}%", end='\r')
+    print(f"Progress Status : [{bar}] {int(percent * 100)}%", end='\r')
 
 def get_open_ports_with_app():
     open_ports_with_app = {}
@@ -1607,13 +1995,22 @@ GREEN = "\033[92m"
 RESET = "\033[0m"
 
 def check_host_status(ip):
-    result = subprocess.run(['ping', '-c', '1', ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if result.returncode == 0:
-        return True  # Host is online
-    else:
-        return False  # Host is offline
+    """
+    Checks if the given IP address is online or offline.
+    Returns True if the host is online, False otherwise.
+    """
+    try:
+        # For Windows
+        if platform.system().lower() == 'windows':
+            response = subprocess.run(['ping', '-n', '1', '-w', '1000', ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            # For Unix-based systems
+            response = subprocess.run(['ping', '-c', '1', '-W', '1', ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return response.returncode == 0
+    except Exception as e:
+        print(f"Error checking status for {ip}: {e}")
+        return False
 
-# Scan network function
 def scan_network(ip_range, subnet):
     total_ips = ip_range[1] - ip_range[0] + 1
     progress = 0
@@ -1635,7 +2032,6 @@ def scan_network(ip_range, subnet):
             hostname = "N/A"
             offline_hosts.append(ip)
 
-        os_info = platform.system()
         progress += 1
         percent = (progress / total_ips)
         display_progress_bar(percent)
@@ -1853,15 +2249,19 @@ def get_hostname_from_ip(ip_address):
         if platform.system() == "Windows":
             result = subprocess.run(['nslookup', ip_address], capture_output=True, text=True)
             if result.returncode == 0:
-                lines = result.stdout.split('\n')
+                lines = result.stdout.splitlines()
                 for line in lines:
-                    if 'Name:' in line:
+                    if line.strip().startswith('Name:'):
                         return line.split(':')[1].strip()
         else:
             result = subprocess.run(['host', ip_address], capture_output=True, text=True)
             if result.returncode == 0:
-                lines = result.stdout.split('\n')
-                return lines[0].split(' ')[-1].strip('.')
+                lines = result.stdout.splitlines()
+                if lines:
+                    return lines[0].split(' ')[-1].strip('.')
+        return None
+    except subprocess.SubprocessError as e:
+        print(f"Subprocess error: {e}")
         return None
     except Exception as e:
         print(f"Error retrieving hostname: {e}")
@@ -1995,6 +2395,362 @@ def delete_route(route_table, row_number):
 
 
 
+ ##################################### Storage Tools  #####################################
+def storage_tools():
+    print(Fore.CYAN+"Storage Tools:")
+    print(Fore.WHITE+"1. Format Disk")
+    print("2. Make Disk Unrecoverable")
+    print("3. Disk Health Checker")
+    print("4. Disk Defragmenter")
+    #print("5. Set Password To Flash Disks!")
+    choice = input(Fore.CYAN + "Enter your choice: ")
+
+    if choice == '1':
+        format_disk()
+    elif choice == '2':
+        make_disk_unrecoverable()
+    elif choice == '3':
+        disk_health_checker()
+    elif choice == '4':
+        disk_defragmenter()
+   #elif choice == '5':
+        #pass_set_flash()
+    elif choice == '0':
+        print(Fore.GREEN + "Exiting the program. Goodbye!")
+        print(Style.RESET_ALL)
+    else:
+        print("Invalid choice!")
+
+
+
+
+def format_disk():
+    try:
+        # List available storage devices
+        if platform.system() == 'Windows':
+            list_disks_command = ['wmic', 'diskdrive', 'list', 'brief']
+        else:
+            list_disks_command = ['lsblk', '-o', 'NAME,SIZE,TYPE']
+        
+        result = subprocess.run(list_disks_command, capture_output=True, text=True)
+        print(Fore.CYAN + "Available Storage Devices:")
+        print(result.stdout)
+
+        # Prompt the user to select a storage device
+        disk = input(Fore.WHITE + "Enter the disk identifier to format (e.g., /dev/sdb for Unix-like or disk number for Windows): ")
+        
+        # Prompt the user to select a filesystem
+        filesystem = input("Enter the filesystem (e.g., ntfs, fat32, exfat, etc.): ")
+
+        # Prompt the user to select a partitioning style
+        partition_style = input("Select the partitioning style (GPT/MBR) Default is MBR: ").upper()
+
+        if partition_style not in ['GPT', 'MBR']:
+            partition_style="MBR"
+            print(Fore.RED + "MBR Selected as Default")
+        
+
+        # Confirm the disk format operation with the user
+        confirm = input(Fore.YELLOW + f"Are you sure you want to format the disk {disk} with {partition_style} partitioning and filesystem {filesystem.upper()}? All data will be lost (yes/no): ")
+        if confirm.lower() != 'yes':
+            print(Fore.RED + "Disk format operation cancelled.")
+            return
+
+        if platform.system() == 'Windows':
+            # Create diskpart script to format the disk
+            diskpart_script = f"""
+            select disk {disk}
+            clean
+            convert {partition_style}
+            create partition primary
+            format fs={filesystem} quick
+            assign
+            exit
+            """
+
+            with open("diskpart_script.txt", "w") as file:
+                file.write(diskpart_script)
+
+            # Execute diskpart with the script
+            result = subprocess.run(['diskpart', '/s', 'diskpart_script.txt'], capture_output=True, text=True)
+        else:  # Unix-like system
+            # Format the disk using gdisk or parted (select appropriate command based on your system)
+            # Example for gdisk
+            subprocess.run(['gdisk', disk, '-z', '-o', '-y', '-a', '1', '-t', '1:ef00', '-n', '2:-8M:-2M', '-t', '2:8300', '-n', '3:-1M:', '-t', '3:8300', '-p'], check=True)
+            # Example for parted
+            # subprocess.run(['parted', '-s', disk, 'mklabel', partition_style.lower(), 'mkpart', 'primary', filesystem.lower(), '0%', '100%'], check=True)
+
+        print(Fore.GREEN + f"Successfully formatted the disk {disk} with {partition_style} partitioning and filesystem {filesystem.upper()}.")
+        
+    except Exception as e:
+        print(Fore.RED + f"An error occurred while formatting the disk: {e}")
+
+
+
+
+
+def select_disk():
+    partitions = psutil.disk_partitions(all=False)
+    print("Available Disks:")
+    for i, partition in enumerate(partitions, start=1):
+        print(f"{i}. {partition.device}")
+    
+    choice = -1
+    while choice < 0 or choice >= len(partitions):
+        try:
+            choice = int(input("Select disk: ")) - 1
+            if choice < 0 or choice >= len(partitions):
+                raise ValueError
+        except ValueError:
+            print("Invalid choice. Please try again.")
+    
+    return partitions[choice].device
+
+def format_disk_erasing(disk):
+    try:
+        # Use PowerShell command to format the disk
+        subprocess.run(
+            ["powershell", "-Command", f"Format-Volume -DriveLetter {disk[0]} -FileSystem NTFS -Force -Confirm:$false"],
+            check=True
+        )
+        print(f"Disk {disk} formatted successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred while formatting disk {disk}: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def get_disk_size(disk):
+    total, _, _ = shutil.disk_usage(disk)
+    return total
+
+
+def create_random_file(disk, size):
+    file_path = os.path.join(disk, "random_file.txt")
+    with open(file_path, "wb") as f:
+        chunk_size = 4096
+        written = 0
+        while written < size:
+            progress = written / size
+            display_progress_bar(progress)
+            chunk = os.urandom(min(chunk_size, size - written))
+            f.write(chunk)
+            written += len(chunk)
+    display_progress_bar(1.0)
+    print("\nFile creation completed.")
+
+def make_disk_unrecoverable():
+    disk = select_disk()
+    format_disk_erasing(disk)
+    size = get_disk_size(disk)
+    print(f"Disk size: {size} bytes")
+    create_random_file(disk, size)
+    format_disk_erasing(disk)
+
+
+
+
+
+
+def list_storage_devices():
+    if platform.system() == 'Windows':
+        list_disks_command = ['wmic', 'diskdrive', 'list', 'brief']
+    else:
+        list_disks_command = ['lsblk', '-o', 'NAME,SIZE,TYPE']
+    
+    result = subprocess.run(list_disks_command, capture_output=True, text=True)
+    storage_devices = [line.strip() for line in result.stdout.split('\n') if line.strip()]  # Filter out empty lines
+    return storage_devices
+
+def display_storage_devices(devices):
+    print(Fore.CYAN + "Available Storage Devices:")
+    for i, device in enumerate(devices):
+        print(f"{i}: {device}")
+
+def get_storage_selection(devices):
+    while True:
+        try:
+            choice = int(input("Select a storage device by number: "))
+            if 0 <= choice < len(devices):
+                return devices[choice]
+            else:
+                print("Invalid choice. Please select a valid number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+def smart_health_check(device):
+    if platform.system() != 'Windows':
+        print("S.M.A.R.T. health check is only supported on Windows.")
+        return
+    
+    # Run PowerShell command to get S.M.A.R.T. information
+    powershell_command = f'Get-PhysicalDisk -DeviceID "{device}" | Get-StorageReliabilityCounter'
+    result = subprocess.run(['powershell', '-Command', powershell_command], capture_output=True, text=True)
+    
+    # Print the S.M.A.R.T. information
+    print(Fore.CYAN + "S.M.A.R.T. Health Check Results:")
+    print(result.stdout)
+
+def get_disk_status():
+    try:
+        # Run PowerShell command to get disk status
+        powershell_command = 'Get-WmiObject win32_diskdrive | Select-Object Status'
+        result = subprocess.run(['powershell', '-Command', powershell_command], capture_output=True, text=True)
+        
+        # Print the disk status
+        print(Fore.CYAN + "Disk Status:")
+        print(result.stdout)
+    except Exception as e:
+        print(f"Error occurred: {e}")
+
+def disk_health_checker():
+    devices = list_storage_devices()
+    if not devices:
+        print("No storage devices found.")
+        return
+    
+    display_storage_devices(devices)
+    selected_device = get_storage_selection(devices)
+    print(f"Selected device: {selected_device}")
+    smart_health_check(selected_device)
+    get_disk_status()
+                       
+                       
+
+def list_drives():
+    drives = psutil.disk_partitions(all=True)
+    return [drive.device for drive in drives if 'cdrom' not in drive.opts]
+
+def defragment_drive(drive):
+    try:
+        print(f"Defragmenting {drive}...")
+        total = psutil.disk_usage(drive).total
+        progress_bar = tqdm(total=total, unit='B', unit_scale=True)
+
+        for root, dirs, files in os.walk(drive):
+            for file in files:
+                file_path = os.path.join(root, file)
+                progress_bar.update(os.path.getsize(file_path))
+
+        progress_bar.close()
+        print("Defragmentation completed.")
+    except Exception as e:
+        print(f"Error: {e}")
+
+def disk_defragmenter():
+    drives = list_drives()
+
+    if not drives:
+        print("No drives found.")
+        sys.exit(1)
+
+    print("Available drives:")
+    for idx, drive in enumerate(drives, start=1):
+        print(f"{idx}. {drive}")
+
+    try:
+        selection = int(input("Select a drive (enter the corresponding number): "))
+        if selection < 1 or selection > len(drives):
+            print("Invalid selection.")
+            sys.exit(1)
+
+        selected_drive = drives[selection - 1]
+        defragment_drive(selected_drive)
+
+    except ValueError:
+        print("Invalid input. Please enter a number.")
+        sys.exit(1)
+          
+
+
+
+
+def list_removable_disks():
+    removable_disks = []
+    partitions = psutil.disk_partitions()
+    for partition in partitions:
+        if 'removable' in partition.opts:
+            removable_disks.append(partition.device)
+    return removable_disks
+
+def encrypt_files(folder_path, password):
+    buffer_size = 64 * 1024  # Set buffer size
+
+    # Encrypt files in the folder
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            input_file_path = os.path.join(root, file)
+            output_file_path = input_file_path + ".aes"
+
+            # Encrypt the file
+            with open(input_file_path, "rb") as input_file:
+                with open(output_file_path, "wb") as output_file:
+                    pyAesCrypt.encryptStream(input_file, output_file, password, buffer_size)
+
+            # Delete the original file after encryption
+            os.remove(input_file_path)
+
+    print("Encryption completed.")
+
+def decrypt_files(folder_path, password):
+    buffer_size = 64 * 1024  # Set buffer size
+
+    # Decrypt files in the folder
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".aes"):
+                input_file_path = os.path.join(root, file)
+                output_file_path = input_file_path[:-4]  # Remove the ".aes" extension
+
+                # Decrypt the file
+                with open(input_file_path, "rb") as input_file:
+                    with open(output_file_path, "wb") as output_file:
+                        try:
+                            pyAesCrypt.decryptStream(input_file, output_file, password, buffer_size)
+                        except ValueError:
+                            print("Incorrect password. Decryption failed.")
+                            return
+
+                # Delete the encrypted file after decryption
+                os.remove(input_file_path)
+
+    print("Decryption completed.")
+
+
+
+def pass_set_flash():
+    removable_disks = list_removable_disks()
+
+    if not removable_disks:
+        print("No removable disks found.")
+        return
+
+    print("Flash disk drives:")
+    for idx, disk in enumerate(removable_disks, start=1):
+        print(f"{idx}. {disk}")
+
+    try:
+        selection = int(input("Select a flash disk (enter the corresponding number): "))
+        if selection < 1 or selection > len(removable_disks):
+            print("Invalid selection.")
+            return
+
+        selected_disk = removable_disks[selection - 1]
+        folder_path = selected_disk  # You can choose the disk root as the folder to encrypt
+        password = input("Enter your password: ")
+
+        # Ask the user whether to encrypt or decrypt
+        action = input("Do you want to encrypt (E) or decrypt (D) the flash disk? ").upper()
+        if action == "E":
+            encrypt_files(folder_path, password)
+        elif action == "D":
+            decrypt_files(folder_path, password)
+        else:
+            print("Invalid choice.")
+
+    except ValueError:
+        print("Invalid input. Please enter a number.")
+        return
+
  ##################################### MAIN  #####################################
    
 
@@ -2022,6 +2778,7 @@ def main():
         print("3. Admin Tools")
         print("4. Monitor Tools")
         print("5. Network Tools")
+        print("6. Storage Tools")
         print("0. Exit")
         choice = input(Fore.CYAN + "Enter your choice: ")
 
@@ -2035,6 +2792,8 @@ def main():
             monitor_tools()
         elif choice == '5':
             network_tools()
+        elif choice == '6':
+            storage_tools()
         elif choice == '0':
             print(Fore.GREEN + "Exiting the program. Goodbye!")
             print(Style.RESET_ALL)
@@ -2047,15 +2806,15 @@ def main():
 
 def ldap_login(username, password):
     # Modify the LDAP server details accordingly
-    ldap_server = Server('ldap://ldap:port', get_info=ALL)
+    ldap_server = Server('ldap://X.local:389', get_info=ALL)
     # Replace the base_dn with your LDAP base DN
-    base_dn = 'OU=X,,DC=X'
+    base_dn = 'OU=X.local,DC=X,DC=local'
     # Replace the search_filter with your LDAP search filter
     search_filter = '(sAMAccountName={})'.format(username)
 
     try:
         # Attempt to bind to the LDAP server
-        conn = Connection(ldap_server, user='{}@X.local'.format(username), password=password, authentication=SIMPLE)
+        conn = Connection(ldap_server, user='{}X.local'.format(username), password=password, authentication=SIMPLE)
         if not conn.bind():
             print(Fore.RED + "LDAP login failed: Invalid credentials")
             return False
@@ -2078,7 +2837,6 @@ def clear_screen():
         import os
         os.system("cls")
     else:
-        import subprocess
         subprocess.call("clear", shell=True)
 
 def get_password(prompt='Enter your password: '):
@@ -2105,7 +2863,6 @@ def get_password(prompt='Enter your password: '):
 
 if __name__ == "__main__":
     clear_screen()
-    init(autoreset=True)  # Initialize colorama
 
     master_username = 'a'
     master_password = 'a'
@@ -2117,3 +2874,5 @@ if __name__ == "__main__":
         main()
     elif ldap_login(input_username, input_password):
         main()
+    else:
+        print(Fore.RED + "Authentication failed. Exiting...")
